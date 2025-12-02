@@ -69,7 +69,7 @@ export const generateFoodDescription = async (
   restaurantName: string
 ): Promise<string | null> => {
   try {
-    // Hardcoded API Key as requested
+    // User provided API Key from AI Studio
     const apiKey = "AIzaSyCEkyuS7zuWqXm543Pcus6gEhrIpLwbCwU";
 
     if (!apiKey) {
