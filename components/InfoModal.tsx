@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { X, MapPin, Camera, Sparkles, Trash2 } from 'lucide-react';
 import { GRADES, getGradeColor, getGradeDescription } from '../utils/rating';
@@ -14,7 +15,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose, onClearDatabase }) => {
         
         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900/50">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="text-blue-500">ℹ️</span> About GastroMap
+            <span className="text-blue-500">ℹ️</span> About 宝宝少爷寻味地图
           </h2>
           <button onClick={onClose} className="p-1 hover:bg-gray-700 rounded-full text-gray-400 hover:text-white transition">
             <X size={20} />

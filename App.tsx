@@ -234,7 +234,7 @@ function App() {
               <UtensilsCrossed size={40} className="text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">GastroMap</h1>
+          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">宝宝少爷寻味地图</h1>
           <p className="text-gray-400 mb-8 leading-relaxed">
             Map your culinary journey. Share food memories with your partner in real-time.
           </p>
@@ -279,7 +279,7 @@ function App() {
         <div className="flex gap-2">
           <div className="bg-gray-800/90 backdrop-blur border border-gray-700 p-2 rounded-lg shadow-lg">
              <h1 className="font-bold text-white px-2 flex items-center gap-2">
-               <MapIcon size={18} className="text-blue-500"/> GastroMap
+               <MapIcon size={18} className="text-blue-500"/> 宝宝少爷寻味地图
              </h1>
           </div>
           <button 
