@@ -67,14 +67,14 @@ export const generateFoodDescription = async (
   imageSrc: string, // Can be Blob URL or Base64 Data URL
   userComment: string,
   restaurantName: string
-): Promise<string> => {
+): Promise<string | null> => {
   try {
     // Hardcoded API Key as requested
     const apiKey = "AIzaSyCEkyuS7zuWqXm543Pcus6gEhrIpLwbCwU";
 
     if (!apiKey) {
       console.error("API Key is missing");
-      return "Error: API Key missing.";
+      return null;
     }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -105,16 +105,10 @@ export const generateFoodDescription = async (
       }
     });
 
-    return response.text || "Delicious!";
+    return response.text || null;
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    
-    // Return a user-friendly error message based on the exception
-    const msg = error.message || String(error);
-    if (msg.includes("400")) return "Error: Image too complex/large.";
-    if (msg.includes("403")) return "Error: API Permission denied.";
-    if (msg.includes("500")) return "Error: AI Service busy.";
-    
-    return "Could not generate description.";
+    // Return null so the UI can handle the error state instead of saving the error message
+    return null;
   }
 };
