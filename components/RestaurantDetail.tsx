@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { X, Calendar, MapPin, Share2, User, Trash2, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { Restaurant, Visit, GUEST_ID } from '../types';
 import { getGradeColor, gradeToScore, scoreToGrade } from '../utils/rating';
-// @ts-ignore
 import html2canvas from 'html2canvas';
 
 interface RestaurantDetailProps {
