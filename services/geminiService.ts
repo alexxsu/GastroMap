@@ -1,8 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Fix: Use process.env.API_KEY as per Google GenAI SDK guidelines.
-// Assume process.env.API_KEY is available and configured.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// We initialize the SDK inside the function to prevent the app from crashing 
+// on startup if the API_KEY is missing or invalid in the environment.
 
 export const generateFoodDescription = async (
   base64Image: string, 
@@ -10,6 +9,10 @@ export const generateFoodDescription = async (
   restaurantName: string
 ): Promise<string> => {
   try {
+    // Fix: Use process.env.API_KEY as per Google GenAI SDK guidelines.
+    // Initialization is deferred until the function is called.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
     let cleanBase64 = base64Image;
 
     // Fix: Handle blob URLs (e.g. from URL.createObjectURL) by fetching and converting to base64
