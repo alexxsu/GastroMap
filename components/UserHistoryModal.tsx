@@ -85,7 +85,7 @@ const UserHistoryModal: React.FC<UserHistoryModalProps> = ({
                   
                   <div className="flex justify-between items-end mt-2">
                      <p className="text-gray-400 text-xs italic truncate max-w-[80%]">
-                       "{item.comment || item.aiDescription || 'No comment'}"
+                       "{item.comment || 'No comment'}"
                      </p>
                      <div className="flex items-center text-gray-600 text-xs gap-1">
                        <Calendar size={10} />

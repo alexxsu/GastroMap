@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, MapPin, Camera, Sparkles, Trash2, Settings, Lock } from 'lucide-react';
+import { X, MapPin, Camera, Trash2, Settings, Lock } from 'lucide-react';
 import { GRADES, getGradeColor, getGradeDescription } from '../utils/rating';
 
 interface InfoModalProps {
@@ -48,10 +48,6 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose, onClearDatabase }) => {
                 <MapPin size={18} className="text-green-400 flex-shrink-0" />
                 <span>We mark it on your map. You can add comments and ratings for every visit.</span>
               </li>
-              <li className="flex gap-3">
-                <Sparkles size={18} className="text-indigo-400 flex-shrink-0" />
-                <span>Use the "AI Food Critic" to generate witty social media captions for your meal.</span>
-              </li>
             </ul>
           </section>
 
@@ -70,7 +66,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose, onClearDatabase }) => {
           </section>
 
           <div className="text-center pt-4">
-             <p className="text-xs text-gray-500">Version 0.1 • Powered by Gemini AI</p>
+             <p className="text-xs text-gray-500">Version 0.1</p>
           </div>
 
           <div className="border-t border-gray-700 pt-4">

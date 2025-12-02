@@ -1,3 +1,4 @@
+
 {
   "name": "gastromap",
   "version": "1.0.0",
@@ -11,7 +12,6 @@
     "react-dom": "^18.2.0",
     "firebase": "^10.8.0",
     "lucide-react": "^0.344.0",
-    "@google/genai": "*",
     "exifr": "^7.1.3",
     "heic2any": "^0.0.4",
     "html2canvas": "^1.4.1"

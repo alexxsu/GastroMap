@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
-import { Camera, MapPin, Search, Loader2, Sparkles, X, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Camera, MapPin, Search, Loader2, X, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Coordinates, PlaceResult, Restaurant, Visit } from '../types';
 import { getGPSFromImage } from '../utils/exif';
-import { generateFoodDescription } from '../services/geminiService';
 import { GRADES } from '../utils/rating';
 import { storage } from '../firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -50,11 +49,6 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
 
   const [rating, setRating] = useState('A');
   const [comment, setComment] = useState('');
-  
-  // AI State
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiDesc, setAiDesc] = useState('');
-  const [aiError, setAiError] = useState<string | null>(null);
   
   // New saving state
   const [isSaving, setIsSaving] = useState(false);
@@ -203,22 +197,6 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
     }
   };
 
-  const handleAnalyzePhoto = async () => {
-    if (!selectedPlace || previewUrls.length === 0) return;
-    setAiLoading(true);
-    setAiError(null);
-    setAiDesc('');
-
-    const desc = await generateFoodDescription(previewUrls[0], comment, selectedPlace.name || 'Unknown');
-    
-    if (desc) {
-      setAiDesc(desc);
-    } else {
-      setAiError("Could not generate description. Please try again.");
-    }
-    setAiLoading(false);
-  };
-
   const handleSave = async () => {
     if (!selectedPlace || !selectedPlace.geometry?.location || previewBlobs.length === 0) return;
     
@@ -254,8 +232,6 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
         photos: downloadURLs, // Store all URLs
         rating,
         comment,
-        // Only include AI description if it exists and is not an error
-        aiDescription: aiDesc || undefined
       };
 
       onSave(newRestaurant, newVisit);
@@ -435,34 +411,6 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
                   placeholder="What did you eat? How was the vibe?"
                   className="w-full h-24 bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500 resize-none"
                 />
-              </div>
-
-              <div className="bg-indigo-900/30 border border-indigo-500/30 p-4 rounded-xl">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center gap-2 text-indigo-300">
-                    <Sparkles size={16} />
-                    <span className="text-sm font-semibold">Gemini Food Critic</span>
-                  </div>
-                  <button 
-                    onClick={handleAnalyzePhoto}
-                    disabled={aiLoading}
-                    className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded-full transition disabled:opacity-50"
-                  >
-                    {aiLoading ? 'Thinking...' : 'Analyze Photo'}
-                  </button>
-                </div>
-                {aiLoading ? (
-                     <div className="flex items-center gap-2 text-indigo-300">
-                       <Loader2 className="animate-spin" size={14} />
-                       <span className="text-xs">Thinking...</span>
-                     </div>
-                ) : aiError ? (
-                     <p className="text-sm text-red-400 italic">Error: {aiError}</p>
-                ) : aiDesc ? (
-                  <p className="text-sm text-indigo-100 italic">"{aiDesc}"</p>
-                ) : (
-                  <p className="text-xs text-gray-500">Tap analyze to get a creative description based on your photo.</p>
-                )}
               </div>
 
               <button 

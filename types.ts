@@ -11,7 +11,6 @@ export interface Visit {
   photos?: string[]; // Array of all photo URLs
   rating: string; // Grade: S, A, B, C, D, E
   comment: string;
-  aiDescription?: string;
   createdBy?: string; // User UID
   creatorName?: string; // User Display Name
   creatorPhotoURL?: string | null; // User Profile Picture
