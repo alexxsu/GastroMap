@@ -6,11 +6,12 @@ import MapContainer from './components/MapContainer';
 import AddVisitModal from './components/AddVisitModal';
 import RestaurantDetail from './components/RestaurantDetail';
 import InfoModal from './components/InfoModal';
+import UserHistoryModal from './components/UserHistoryModal';
 
 // Firebase Imports
 import { auth, googleProvider, db } from './firebaseConfig';
 import { signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { collection, onSnapshot, doc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 
 function App() {
   // Hardcoded key as requested
@@ -50,12 +51,20 @@ function App() {
         fetchedRestaurants.push(doc.data() as Restaurant);
       });
       setRestaurants(fetchedRestaurants);
+      
+      // Update selectedRestaurant if it exists to reflect real-time changes (e.g. deletions)
+      if (selectedRestaurant) {
+        const updated = fetchedRestaurants.find(r => r.id === selectedRestaurant.id);
+        if (updated) {
+          setSelectedRestaurant(updated);
+        }
+      }
     }, (error) => {
       console.error("Error fetching data:", error);
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, selectedRestaurant]);
 
   const handleLogin = async () => {
     try {
@@ -115,6 +124,28 @@ function App() {
     } catch (e) {
       console.error("Error saving to Firestore:", e);
       alert("Failed to save memory. Check your internet connection.");
+    }
+  };
+
+  // 4. Delete Visit
+  const handleDeleteVisit = async (restaurant: Restaurant, visitToDelete: Visit) => {
+    try {
+      const restaurantRef = doc(db, "restaurants", restaurant.id);
+      const restaurantDoc = await getDoc(restaurantRef);
+      
+      if (restaurantDoc.exists()) {
+        const currentData = restaurantDoc.data() as Restaurant;
+        // Filter out the visit by ID
+        const updatedVisits = currentData.visits.filter(v => v.id !== visitToDelete.id);
+        
+        await updateDoc(restaurantRef, {
+          visits: updatedVisits
+        });
+        // UI updates automatically via onSnapshot
+      }
+    } catch (e) {
+      console.error("Error deleting visit:", e);
+      alert("Failed to delete memory.");
     }
   };
 
@@ -195,8 +226,13 @@ function App() {
         {/* User Info & Logout */}
         {user && (
           <div className="bg-gray-800/90 backdrop-blur border border-gray-700 p-1.5 pl-3 pr-1.5 rounded-full shadow-lg flex items-center gap-2">
-             <img src={user.photoURL || ''} alt="User" className="w-6 h-6 rounded-full border border-gray-600" />
-             <span className="text-xs text-gray-300 font-medium max-w-[100px] truncate">{user.displayName}</span>
+             <div 
+               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition"
+               onClick={() => setViewState(ViewState.USER_HISTORY)}
+             >
+                <img src={user.photoURL || ''} alt="User" className="w-6 h-6 rounded-full border border-gray-600" />
+                <span className="text-xs text-gray-300 font-medium max-w-[100px] truncate">{user.displayName}</span>
+             </div>
              <button onClick={handleLogout} className="p-1.5 hover:bg-red-500/20 hover:text-red-400 rounded-full text-gray-400 transition">
                <LogOut size={14} />
              </button>
@@ -233,6 +269,7 @@ function App() {
       {viewState === ViewState.RESTAURANT_DETAIL && selectedRestaurant && (
         <RestaurantDetail 
           restaurant={selectedRestaurant}
+          currentUserUid={user?.uid}
           onClose={() => {
             setSelectedRestaurant(null);
             setViewState(ViewState.MAP);
@@ -240,11 +277,24 @@ function App() {
           onAddAnotherVisit={() => {
             setViewState(ViewState.ADD_ENTRY);
           }}
+          onDeleteVisit={handleDeleteVisit}
         />
       )}
 
       {viewState === ViewState.INFO && (
         <InfoModal onClose={() => setViewState(ViewState.MAP)} />
+      )}
+
+      {viewState === ViewState.USER_HISTORY && user && (
+        <UserHistoryModal 
+          restaurants={restaurants}
+          currentUserUid={user.uid}
+          onClose={() => setViewState(ViewState.MAP)}
+          onSelectVisit={(r) => {
+            setSelectedRestaurant(r);
+            setViewState(ViewState.RESTAURANT_DETAIL);
+          }}
+        />
       )}
     </div>
   );

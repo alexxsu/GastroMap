@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { X, MapPin, Camera, Sparkles } from 'lucide-react';
-import { GRADES, getGradeColor } from '../utils/rating';
+import { GRADES, getGradeColor, getGradeDescription } from '../utils/rating';
 
 interface InfoModalProps {
   onClose: () => void;
@@ -42,16 +43,12 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => {
 
           <section>
              <h3 className="text-white font-semibold mb-2">Grading System</h3>
-             <div className="grid grid-cols-3 gap-2 text-sm">
+             <div className="grid gap-2 text-sm">
                {GRADES.map(grade => (
-                 <div key={grade} className="flex items-center gap-2 bg-gray-700/50 p-2 rounded">
-                   <span className={`font-bold ${getGradeColor(grade)}`}>{grade}</span>
-                   <span className="text-gray-400 text-xs">
-                     {grade === 'S' ? 'God Tier' : 
-                      grade === 'A' ? 'Excellent' : 
-                      grade === 'B' ? 'Good' : 
-                      grade === 'C' ? 'Average' : 
-                      grade === 'D' ? 'Poor' : 'Avoid'}
+                 <div key={grade} className="flex items-center gap-3 bg-gray-700/50 p-2 rounded">
+                   <span className={`font-bold text-lg w-8 text-center ${getGradeColor(grade)}`}>{grade}</span>
+                   <span className="text-gray-300 text-xs sm:text-sm">
+                     {getGradeDescription(grade)}
                    </span>
                  </div>
                ))}

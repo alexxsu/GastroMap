@@ -1,3 +1,4 @@
+
 export const GRADES = ['S', 'A', 'B', 'C', 'D', 'E'];
 
 export const gradeToScore = (grade: string): number => {
@@ -30,5 +31,17 @@ export const getGradeColor = (grade: string): string => {
     case 'D': return 'text-orange-400';
     case 'E': return 'text-red-400';
     default: return 'text-gray-400';
+  }
+};
+
+export const getGradeDescription = (grade: string): string => {
+  switch (grade) {
+    case 'S': return 'God Tier';
+    case 'A': return 'Excellent, value exceeds price';
+    case 'B': return 'Good, value matches price';
+    case 'C': return 'Bad, value mismatch';
+    case 'D': return 'Scam, avoid at all cost';
+    case 'E': return 'Inedible';
+    default: return '';
   }
 };
