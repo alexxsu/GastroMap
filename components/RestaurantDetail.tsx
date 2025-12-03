@@ -33,6 +33,7 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
   const [isClosingDown, setIsClosingDown] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const startYRef = useRef<number>(0);
   
   const sortedVisits = [...restaurant.visits].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -61,20 +62,32 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
     if (!isDragging) return;
     const currentY = e.touches[0].clientY;
     const diff = currentY - startYRef.current;
-    
-    // Only allow dragging down
-    if (diff > 0) {
+
+    // Allow both up and down dragging
+    if (!isExpanded && diff < 0) {
+      // Dragging up when not expanded - allow expansion
+      setDragY(diff);
+    } else if (diff > 0) {
+      // Dragging down - allow closing
       setDragY(diff);
     }
   };
 
   const onTouchEnd = () => {
     setIsDragging(false);
-    if (dragY > 150) { // Threshold to close
-      // Smooth close with momentum
+
+    // Swipe up to expand (when not already expanded)
+    if (!isExpanded && dragY < -100) {
+      setIsExpanded(true);
+      setDragY(0);
+    }
+    // Swipe down to close
+    else if (dragY > 150) {
       setTimeout(() => handleClose('down'), 100);
-    } else {
-      setDragY(0); // Snap back with smooth transition
+    }
+    // Snap back if threshold not met
+    else {
+      setDragY(0);
     }
   };
 
@@ -220,22 +233,27 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
   return (
     <>
       <div
-        className={`absolute bottom-0 left-0 right-0 h-[80%] sm:h-full sm:top-0 sm:left-auto sm:right-0 sm:w-[400px] bg-gray-900 border-t sm:border-t-0 sm:border-l border-gray-800 shadow-2xl z-20 flex flex-col rounded-t-2xl sm:rounded-none ${animationClass}`}
+        className={`absolute bottom-0 left-0 right-0 ${isExpanded ? 'h-full top-0' : 'h-[80%]'} sm:h-full sm:top-0 sm:left-auto sm:right-0 sm:w-[400px] bg-gray-900 border-t sm:border-t-0 sm:border-l border-gray-800 shadow-2xl z-20 flex flex-col ${isExpanded ? 'rounded-none' : 'rounded-t-2xl'} sm:rounded-none ${animationClass}`}
         style={{
           transform: isDragging ? `translateY(${dragY}px)` : undefined,
-          transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          transition: isDragging ? 'none' : 'height 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.3s ease'
         }}
       >
         
         {/* Header - Draggable Area */}
-        <div 
-          className="relative h-32 sm:h-48 bg-gray-800 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none rounded-t-2xl sm:rounded-none overflow-hidden"
+        <div
+          className={`relative h-32 sm:h-48 bg-gray-800 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none ${isExpanded ? 'rounded-none' : 'rounded-t-2xl'} sm:rounded-none overflow-hidden`}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          {/* Drag Handle for Mobile */}
-          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-12 h-1.5 bg-gray-400/50 rounded-full z-30 sm:hidden"></div>
+          {/* Drag Handle for Mobile - changes based on expand state */}
+          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-12 h-1.5 bg-gray-400/50 rounded-full z-30 sm:hidden transition-all duration-300"></div>
+          {!isExpanded && (
+            <div className="absolute top-5 left-1/2 transform -translate-x-1/2 text-[10px] text-gray-500 z-30 sm:hidden pointer-events-none">
+              Swipe up to expand
+            </div>
+          )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent z-10 pointer-events-none" />
           {restaurant.visits.length > 0 && (
