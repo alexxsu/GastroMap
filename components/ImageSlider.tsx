@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
@@ -11,9 +11,10 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ photos }) => {
   const [index, setIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   
-  // Touch state for swipe detection
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  // Use Refs for touch tracking to avoid state update lag during gestures
+  const touchStartRef = useRef<number | null>(null);
+  const touchEndRef = useRef<number | null>(null);
+  const isDraggingRef = useRef(false);
 
   if (!photos || photos.length === 0) return <div className="h-48 bg-gray-800" />;
 
@@ -47,17 +48,21 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ photos }) => {
 
   // Touch Handlers
   const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    touchEndRef.current = null;
+    touchStartRef.current = e.targetTouches[0].clientX;
+    isDraggingRef.current = false;
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    touchEndRef.current = e.targetTouches[0].clientX;
+    if (touchStartRef.current && Math.abs(touchEndRef.current - touchStartRef.current) > 10) {
+      isDraggingRef.current = true;
+    }
   };
 
   const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
+    if (!touchStartRef.current || !touchEndRef.current) return;
+    const distance = touchStartRef.current - touchEndRef.current;
     const minSwipeDistance = 50;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
@@ -67,13 +72,30 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ photos }) => {
     } else if (isRightSwipe) {
       setIndex((prev) => (prev - 1 + photos.length) % photos.length);
     }
+    
+    // Reset refs after a short delay to allow onClick to check isDragging
+    setTimeout(() => {
+      touchStartRef.current = null;
+      touchEndRef.current = null;
+      isDraggingRef.current = false;
+    }, 100);
+  };
+
+  const handleContainerClick = () => {
+    // Only open lightbox if we weren't dragging/swiping
+    if (!isDraggingRef.current) {
+      setIsLightboxOpen(true);
+    }
   };
 
   return (
     <>
       <div 
-        className="h-48 w-full relative group overflow-hidden bg-gray-900 cursor-zoom-in"
-        onClick={() => setIsLightboxOpen(true)}
+        className="h-48 w-full relative group overflow-hidden bg-gray-900 cursor-zoom-in touch-pan-y"
+        onClick={handleContainerClick}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         {/* Carousel Container */}
         <div 
@@ -84,7 +106,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ photos }) => {
             <img 
               key={i}
               src={photo} 
-              className="w-full h-full object-cover flex-shrink-0" 
+              className="w-full h-full object-cover flex-shrink-0 select-none pointer-events-none" 
               alt={`Food ${i + 1}`} 
             />
           ))}
@@ -92,12 +114,12 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ photos }) => {
         
         {photos.length > 1 && (
           <>
-            <div className="absolute inset-0 flex items-center justify-between p-2 opacity-0 group-hover:opacity-100 transition z-10 pointer-events-none">
-              <button onClick={prev} className="pointer-events-auto bg-black/50 hover:bg-black/70 p-1 rounded-full text-white backdrop-blur-sm">
-                <ChevronLeft size={16} />
+            <div className="absolute inset-0 flex items-center justify-between px-2 opacity-0 group-hover:opacity-100 transition z-10 pointer-events-none">
+              <button onClick={prev} className="pointer-events-auto bg-black/40 hover:bg-black/60 p-2 rounded-full text-white backdrop-blur-sm transition transform active:scale-95">
+                <ChevronLeft size={20} />
               </button>
-              <button onClick={next} className="pointer-events-auto bg-black/50 hover:bg-black/70 p-1 rounded-full text-white backdrop-blur-sm">
-                <ChevronRight size={16} />
+              <button onClick={next} className="pointer-events-auto bg-black/40 hover:bg-black/60 p-2 rounded-full text-white backdrop-blur-sm transition transform active:scale-95">
+                <ChevronRight size={20} />
               </button>
             </div>
             <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1 z-20 pointer-events-none">
