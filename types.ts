@@ -26,6 +26,13 @@ export interface Restaurant {
 
 export const GUEST_ID = 'guest-user';
 
+export interface UserProfile {
+  email: string;
+  status: 'pending' | 'approved' | 'rejected';
+  role: 'user' | 'admin';
+  createdAt: string;
+}
+
 // Global declaration for Google Maps
 declare global {
   namespace google {
@@ -185,6 +192,7 @@ export type PlaceResult = google.maps.places.PlaceResult;
 
 export enum ViewState {
   LOGIN = 'LOGIN',
+  PENDING = 'PENDING',
   MAP = 'MAP',
   ADD_ENTRY = 'ADD_ENTRY',
   RESTAURANT_DETAIL = 'RESTAURANT_DETAIL',

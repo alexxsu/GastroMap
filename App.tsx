@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Map as MapIcon, Info, LogOut, UtensilsCrossed, User as UserIcon, BarChart2, Search, X, Crosshair, Minus, LocateFixed, Filter } from 'lucide-react';
-import { Restaurant, ViewState, Coordinates, Visit, GUEST_ID } from './types';
+import { Plus, Map as MapIcon, Info, LogOut, UtensilsCrossed, User as UserIcon, BarChart2, Search, X, Crosshair, Minus, LocateFixed, Filter, Lock, Clock, RefreshCw } from 'lucide-react';
+import { Restaurant, ViewState, Coordinates, Visit, GUEST_ID, UserProfile } from './types';
 import MapContainer from './components/MapContainer';
 import AddVisitModal from './components/AddVisitModal';
 import RestaurantDetail from './components/RestaurantDetail';
@@ -20,6 +20,7 @@ interface AppUser {
   uid: string;
   displayName: string | null;
   photoURL: string | null;
+  email: string | null;
 }
 
 function App() {
@@ -43,26 +44,81 @@ function App() {
   
   // UI State
   const [hideAddButton, setHideAddButton] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   
   const [editingData, setEditingData] = useState<{ restaurant: Restaurant, visit: Visit } | null>(null);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const [currentMapCenter, setCurrentMapCenter] = useState<Coordinates>({ lat: 43.6532, lng: -79.3832 });
 
+  // Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        setUser(currentUser);
-        setViewState(ViewState.MAP);
+        setUser({
+          uid: currentUser.uid,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
+          email: currentUser.email
+        });
+        // We do NOT set ViewState.MAP here immediately for real users.
+        // The checkUserStatus effect will handle it.
       } else {
+        // If user logs out, or was never logged in
+        // Only reset to LOGIN if we are not currently in Guest Mode
         setUser((prev) => (prev?.uid === GUEST_ID ? prev : null));
-        setViewState((prev) => (prev === ViewState.MAP && user?.uid === GUEST_ID ? ViewState.MAP : ViewState.LOGIN));
+        setViewState((prev) => {
+          if (prev === ViewState.MAP && user?.uid === GUEST_ID) return ViewState.MAP;
+          return ViewState.LOGIN;
+        });
       }
     });
     return () => unsubscribe();
   }, [user?.uid]);
 
+  // Check User Approval Status (Real Users Only)
   useEffect(() => {
-    if (!user) return;
+    const checkStatus = async () => {
+      if (!user || user.uid === GUEST_ID) return;
+      
+      setIsCheckingStatus(true);
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const userData = userSnap.data() as UserProfile;
+          if (userData.status === 'approved') {
+            setViewState(ViewState.MAP);
+          } else {
+            setViewState(ViewState.PENDING);
+          }
+        } else {
+          // Create new user doc
+          await setDoc(userRef, {
+            email: user.email || 'unknown',
+            status: 'pending',
+            role: 'user',
+            createdAt: new Date().toISOString()
+          });
+          setViewState(ViewState.PENDING);
+        }
+      } catch (err) {
+        console.error("Error checking user status:", err);
+      } finally {
+        setIsCheckingStatus(false);
+      }
+    };
+
+    if (user && user.uid !== GUEST_ID) {
+      checkStatus();
+    } else if (user && user.uid === GUEST_ID) {
+      setViewState(ViewState.MAP);
+    }
+  }, [user]);
+
+  // Data Fetching (Only when Map is Active)
+  useEffect(() => {
+    if (!user || viewState === ViewState.PENDING || viewState === ViewState.LOGIN) return;
 
     const unsubscribe = onSnapshot(collection(db, "restaurants"), (snapshot) => {
       const fetchedRestaurants: Restaurant[] = [];
@@ -90,7 +146,7 @@ function App() {
     });
 
     return () => unsubscribe();
-  }, [user, selectedRestaurant]);
+  }, [user, selectedRestaurant, viewState]);
 
   // Handle Search Filtering
   useEffect(() => {
@@ -145,8 +201,8 @@ function App() {
   };
 
   const handleGuestLogin = () => {
-    setUser({ uid: GUEST_ID, displayName: 'Guest', photoURL: null });
-    setViewState(ViewState.MAP);
+    setUser({ uid: GUEST_ID, displayName: 'Guest', photoURL: null, email: null });
+    // Guest bypasses the approval check in useEffect via condition
   };
 
   const handleLogout = async () => {
@@ -156,6 +212,27 @@ function App() {
       await signOut(auth);
     }
     setViewState(ViewState.LOGIN);
+  };
+
+  const handleRefreshStatus = async () => {
+    if (!user || user.uid === GUEST_ID) return;
+    setIsCheckingStatus(true);
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.data() as UserProfile;
+        if (userData.status === 'approved') {
+          setViewState(ViewState.MAP);
+        } else {
+          alert("Account is still pending approval.");
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsCheckingStatus(false);
+    }
   };
 
   const handleMapLoad = useCallback((map: google.maps.Map) => {
@@ -202,8 +279,6 @@ function App() {
 
   const handleResetView = () => {
     if (mapInstance) {
-      // Bounds for Greater Toronto Area (approximate)
-      // SW: Mississauga/Oakville border, NE: Scarborough/Pickering border
       const bounds = new google.maps.LatLngBounds(
         { lat: 43.48, lng: -79.80 }, 
         { lat: 43.90, lng: -79.00 }
@@ -233,7 +308,7 @@ function App() {
     setTimeout(() => {
       setIsFilterOpen(false);
       setIsFilterClosing(false);
-    }, 200); // Wait for animation
+    }, 200);
   };
 
   const handleSaveVisit = async (restaurantInfo: Restaurant, visit: Visit) => {
@@ -320,7 +395,6 @@ function App() {
 
   const openAddModal = () => setViewState(ViewState.ADD_ENTRY);
 
-  // Toggle function for the main action button
   const handleToggleAdd = () => {
     if (viewState === ViewState.ADD_ENTRY) {
       setViewState(ViewState.MAP);
@@ -339,6 +413,43 @@ function App() {
     setEditingData({ restaurant: r, visit: v });
     setViewState(ViewState.EDIT_ENTRY);
   };
+
+  // ---------------- RENDER ----------------
+
+  if (viewState === ViewState.PENDING) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-6 relative overflow-hidden">
+        <div className="bg-gray-800/80 backdrop-blur p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 z-10 text-center animate-scale-in">
+          <div className="flex justify-center mb-6">
+            <div className="bg-yellow-500/20 p-4 rounded-full">
+              <Lock size={40} className="text-yellow-500" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Access Pending</h1>
+          <p className="text-gray-400 mb-8 leading-relaxed">
+            Your account is waiting for administrator approval. Please contact the owner or check back later.
+          </p>
+          
+          <div className="flex flex-col gap-3">
+             <button 
+               onClick={handleRefreshStatus}
+               className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl transition"
+             >
+               {isCheckingStatus ? <RefreshCw size={18} className="animate-spin" /> : <RefreshCw size={18} />}
+               Check Status
+             </button>
+             <button 
+               onClick={handleLogout}
+               className="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-3 px-6 rounded-xl transition"
+             >
+               <LogOut size={18} />
+               Log Out
+             </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (viewState === ViewState.LOGIN) {
     return (
@@ -384,16 +495,42 @@ function App() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-gray-900">
-      {/* 
-        Pass filtered restaurants to map. 
-        Note: We keep existingRestaurants=restaurants in AddVisitModal so users can add visits to hidden places too if they search there.
-      */}
-      <MapContainer 
-        apiKey={GOOGLE_MAPS_KEY} 
-        restaurants={filteredMapRestaurants}
-        onMapLoad={handleMapLoad}
-        onMarkerClick={handleMarkerClick}
-      />
+      {/* Map & Add Button Container */}
+      {(viewState === ViewState.MAP || viewState === ViewState.RESTAURANT_DETAIL || viewState === ViewState.ADD_ENTRY || viewState === ViewState.EDIT_ENTRY || viewState === ViewState.INFO || viewState === ViewState.STATS || viewState === ViewState.USER_HISTORY) && (
+        <>
+          <MapContainer 
+            apiKey={GOOGLE_MAPS_KEY} 
+            restaurants={filteredMapRestaurants}
+            onMapLoad={handleMapLoad}
+            onMarkerClick={handleMarkerClick}
+          />
+          
+          {/* Add Button */}
+          {!hideAddButton && (
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[60] pointer-events-auto">
+              <button 
+                onClick={handleToggleAdd}
+                className={`group relative flex items-center justify-center w-16 h-16 rounded-full border backdrop-blur-xl shadow-[0_0_20px_rgba(0,0,0,0.3)] transition-all duration-300 ease-out active:scale-95
+                  ${isAddModalOpen 
+                    ? 'bg-red-500/80 border-red-400/50 shadow-red-500/20' 
+                    : 'bg-gray-900/40 border-white/20 hover:bg-gray-900/60 hover:shadow-blue-500/20 hover:scale-105'
+                  }
+                `}
+                title={isAddModalOpen ? "Close" : "Add Memory"}
+              >
+                {!isAddModalOpen && <div className="absolute inset-0 rounded-full border border-white/5 group-hover:scale-110 transition-transform duration-500 opacity-50"></div>}
+                
+                <Plus 
+                  size={32} 
+                  className={`text-white/90 drop-shadow-md transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                    ${isAddModalOpen ? 'rotate-[135deg]' : 'group-hover:rotate-90'}
+                  `} 
+                />
+              </button>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Top Left Controls */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 w-[calc(100%-6rem)] max-w-sm pointer-events-none">
@@ -436,7 +573,6 @@ function App() {
             )}
           </div>
           
-          {/* Search Results Dropdown */}
           {searchQuery && (
              <div className="mt-2 border-t border-gray-700 pt-2 max-h-60 overflow-y-auto">
                {searchResults.length > 0 ? (
@@ -482,7 +618,7 @@ function App() {
 
       {/* Top Right Buttons */}
       <div className="absolute top-24 right-4 z-10 flex flex-col gap-3 pointer-events-auto items-end">
-        {/* Filter Button & Popover */}
+        {/* Filter Button */}
         <div className="relative">
            <button 
              onClick={handleFilterToggle}
@@ -502,9 +638,7 @@ function App() {
            
            {(isFilterOpen || isFilterClosing) && (
              <>
-               {/* Transparent Backdrop to close on outside click */}
                <div className="fixed inset-0 z-10" onClick={closeFilter}></div>
-
                <div className={`absolute right-14 top-0 bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-3 flex flex-col gap-2 z-20 w-32 origin-top-right ${isFilterClosing ? 'animate-scale-out' : 'animate-scale-in'}`}>
                   <div className="text-xs text-gray-400 font-bold uppercase mb-1">Filter Map</div>
                   <div className="grid grid-cols-2 gap-2">
@@ -580,32 +714,6 @@ function App() {
            <Minus size={24} className="group-hover:text-blue-400 transition" />
         </button>
       </div>
-
-      {/* Add Button - Bottom Center - New Glassmorphism Design with Rotate Animation */}
-      {!hideAddButton && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[60] pointer-events-auto">
-          <button 
-            onClick={handleToggleAdd}
-            className={`group relative flex items-center justify-center w-16 h-16 rounded-full border backdrop-blur-xl shadow-[0_0_20px_rgba(0,0,0,0.3)] transition-all duration-300 ease-out active:scale-95
-               ${isAddModalOpen 
-                 ? 'bg-red-500/80 border-red-400/50 shadow-red-500/20' 
-                 : 'bg-gray-900/40 border-white/20 hover:bg-gray-900/60 hover:shadow-blue-500/20 hover:scale-105'
-               }
-            `}
-            title={isAddModalOpen ? "Close" : "Add Memory"}
-          >
-             {/* Inner ring for idle animation */}
-             {!isAddModalOpen && <div className="absolute inset-0 rounded-full border border-white/5 group-hover:scale-110 transition-transform duration-500 opacity-50"></div>}
-             
-             <Plus 
-               size={32} 
-               className={`text-white/90 drop-shadow-md transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                 ${isAddModalOpen ? 'rotate-[135deg]' : 'group-hover:rotate-90'}
-               `} 
-             />
-          </button>
-        </div>
-      )}
 
       {/* Modals */}
       {viewState === ViewState.ADD_ENTRY && (

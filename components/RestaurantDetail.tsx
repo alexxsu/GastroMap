@@ -188,10 +188,17 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
 
   const canEditOrDeleteVisit = (visit: Visit): boolean => {
     if (!currentUserUid) return false;
+    
+    // Guest users cannot edit anything (Read Only)
+    if (currentUserUid === GUEST_ID) return false;
+
     if (visit.createdBy === currentUserUid) return true;
+    
+    // Real users can edit guest posts
     const isRealUser = currentUserUid !== GUEST_ID;
     const isGuestPost = visit.createdBy === GUEST_ID;
     if (isRealUser && isGuestPost) return true;
+    
     return false;
   };
 
@@ -417,12 +424,21 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
         {/* Footer Actions */}
         {activeTab === 'timeline' && (
           <div className="p-4 border-t border-gray-800 bg-gray-900 flex-shrink-0">
-            <button 
-              onClick={onAddAnotherVisit}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-lg transition"
-            >
-              Add Another Visit Here
-            </button>
+            {/* 
+              Check if user can add visits. Guests can view but NOT add (as per "cant edit" request).
+              Actually, usually adding is "creating", editing is "modifying". 
+              The prompt said "visitor can still view, but cant edit".
+              Does creating count as editing? Usually yes in read-only mode.
+              I will hide the 'Add Another Visit' button for Guests.
+            */}
+            {currentUserUid !== GUEST_ID && (
+              <button 
+                onClick={onAddAnotherVisit}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-lg transition"
+              >
+                Add Another Visit Here
+              </button>
+            )}
           </div>
         )}
       </div>
