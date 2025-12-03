@@ -40,7 +40,7 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
   const handleClose = (direction: 'right' | 'down' = 'right') => {
     if (direction === 'down') setIsClosingDown(true);
     setIsClosing(true);
-    setTimeout(onClose, 250); // Matches CSS animation duration
+    setTimeout(onClose, 400); // Increased from 250ms for smoother animation
   };
 
   const formatDate = (dateStr: string) => {
@@ -71,9 +71,10 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
   const onTouchEnd = () => {
     setIsDragging(false);
     if (dragY > 150) { // Threshold to close
-      handleClose('down');
+      // Smooth close with momentum
+      setTimeout(() => handleClose('down'), 100);
     } else {
-      setDragY(0); // Snap back
+      setDragY(0); // Snap back with smooth transition
     }
   };
 
@@ -218,11 +219,11 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
 
   return (
     <>
-      <div 
+      <div
         className={`absolute bottom-0 left-0 right-0 h-[80%] sm:h-full sm:top-0 sm:left-auto sm:right-0 sm:w-[400px] bg-gray-900 border-t sm:border-t-0 sm:border-l border-gray-800 shadow-2xl z-20 flex flex-col rounded-t-2xl sm:rounded-none ${animationClass}`}
-        style={{ 
+        style={{
           transform: isDragging ? `translateY(${dragY}px)` : undefined,
-          transition: isDragging ? 'none' : undefined
+          transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}
       >
         
