@@ -105,7 +105,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose, onClearDatabase, isAdmin
           </div>
 
           <div className="text-center pt-2">
-            <p className="text-xs text-gray-600">Version 1.0</p>
+            <p className="text-xs text-gray-600">Version 1.1</p>
           </div>
         </div>
       </div>
