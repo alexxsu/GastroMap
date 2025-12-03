@@ -34,6 +34,7 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanding, setIsExpanding] = useState(false);
   const startYRef = useRef<number>(0);
   
   const sortedVisits = [...restaurant.visits].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -78,7 +79,11 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
 
     // Swipe up to expand (when not already expanded)
     if (!isExpanded && dragY < -100) {
-      setIsExpanded(true);
+      setIsExpanding(true);
+      setTimeout(() => {
+        setIsExpanded(true);
+        setIsExpanding(false);
+      }, 50);
       setDragY(0);
     }
     // Swipe down to close
@@ -236,7 +241,11 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
         className={`absolute bottom-0 left-0 right-0 ${isExpanded ? 'h-full top-0' : 'h-[80%]'} sm:h-full sm:top-0 sm:left-auto sm:right-0 sm:w-[400px] bg-gray-900 border-t sm:border-t-0 sm:border-l border-gray-800 shadow-2xl z-20 flex flex-col ${isExpanded ? 'rounded-none' : 'rounded-t-2xl'} sm:rounded-none ${animationClass}`}
         style={{
           transform: isDragging ? `translateY(${dragY}px)` : undefined,
-          transition: isDragging ? 'none' : 'height 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.3s ease'
+          transition: isDragging
+            ? 'none'
+            : isExpanding || isExpanded
+            ? 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            : 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}
       >
         

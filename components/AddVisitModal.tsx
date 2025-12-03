@@ -112,15 +112,36 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
       try {
         // 1. Get GPS from the FIRST image only (Must be done on original file before compression strips EXIF)
         const coords = await getGPSFromImage(firstFile);
-        
-        // 2. Process ALL images (HEIC -> JPG -> Compress)
-        const blobs = await Promise.all(files.map(f => processFile(f)));
-        const urls = blobs.map(b => URL.createObjectURL(b));
 
-        setPreviewBlobs(blobs);
+        // 2. Process ALL images (HEIC -> JPG -> Compress) with individual error handling
+        const results = await Promise.allSettled(files.map(f => processFile(f)));
+
+        const successfulBlobs: Blob[] = [];
+        let failedCount = 0;
+
+        results.forEach((result, i) => {
+          if (result.status === 'fulfilled') {
+            successfulBlobs.push(result.value);
+          } else {
+            failedCount++;
+            console.error(`Failed to process image ${files[i].name}:`, result.reason);
+          }
+        });
+
+        if (failedCount > 0) {
+          alert(`Warning: ${failedCount} of ${files.length} image(s) failed to process. Continuing with ${successfulBlobs.length} successful image(s).`);
+        }
+
+        if (successfulBlobs.length === 0) {
+          throw new Error('All images failed to process');
+        }
+
+        const urls = successfulBlobs.map(b => URL.createObjectURL(b));
+
+        setPreviewBlobs(successfulBlobs);
         setPreviewUrls(urls);
         setIsProcessingImg(false);
-        
+
         if (coords) {
           setFoundLocation(coords);
           searchNearbyPlaces(coords);
@@ -132,6 +153,7 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
 
       } catch (error) {
         console.error("Error processing images", error);
+        alert("Failed to process images. This may be due to:\n- Unsupported image format\n- Corrupted image file\n- Memory issues\n\nPlease try with different photos or take new ones.");
         setIsProcessingImg(false);
       }
     }
