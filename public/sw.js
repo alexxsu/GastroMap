@@ -1,9 +1,13 @@
-const CACHE_NAME = 'gourmetmaps-v4';
+const CACHE_NAME = 'gourmetmaps-v5';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo.svg'
+  '/logo.svg',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/icons/apple-touch-icon.png',
+  '/icons/favicon-96x96.png'
 ];
 
 self.addEventListener('install', (event) => {
