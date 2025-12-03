@@ -44,13 +44,20 @@ const StatsModal: React.FC<StatsModalProps> = ({ restaurants, onClose }) => {
   };
 
   const handleClose = () => {
+    if (isClosing) return;
     setIsClosing(true);
     setTimeout(onClose, 200);
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`}>
-      <div className="bg-gray-800 w-full max-w-4xl rounded-2xl border border-gray-700 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div 
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`}
+      onClick={handleClose}
+    >
+      <div 
+        className="bg-gray-800 w-full max-w-4xl rounded-2xl border border-gray-700 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900/50">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">

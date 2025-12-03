@@ -39,6 +39,7 @@ function App() {
   // Grade Filter State
   const [selectedGrades, setSelectedGrades] = useState<string[]>(GRADES);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterClosing, setIsFilterClosing] = useState(false);
   
   // UI State
   const [hideAddButton, setHideAddButton] = useState(false);
@@ -217,6 +218,22 @@ function App() {
         ? prev.filter(g => g !== grade) 
         : [...prev, grade]
     );
+  };
+
+  const handleFilterToggle = () => {
+    if (isFilterOpen) {
+      closeFilter();
+    } else {
+      setIsFilterOpen(true);
+    }
+  };
+
+  const closeFilter = () => {
+    setIsFilterClosing(true);
+    setTimeout(() => {
+      setIsFilterOpen(false);
+      setIsFilterClosing(false);
+    }, 200); // Wait for animation
   };
 
   const handleSaveVisit = async (restaurantInfo: Restaurant, visit: Visit) => {
@@ -468,9 +485,9 @@ function App() {
         {/* Filter Button & Popover */}
         <div className="relative">
            <button 
-             onClick={() => setIsFilterOpen(!isFilterOpen)}
+             onClick={handleFilterToggle}
              className={`p-3 rounded-full shadow-lg transition group backdrop-blur border flex items-center justify-center w-12 h-12
-               ${isFilterOpen || selectedGrades.length < GRADES.length ? 'bg-blue-600 text-white border-blue-400' : 'bg-gray-800/90 text-white border-gray-700 hover:bg-gray-700'}
+               ${(isFilterOpen || isFilterClosing) || selectedGrades.length < GRADES.length ? 'bg-blue-600 text-white border-blue-400' : 'bg-gray-800/90 text-white border-gray-700 hover:bg-gray-700'}
              `}
              title="Filter Grades"
            >
@@ -483,30 +500,35 @@ function App() {
               )}
            </button>
            
-           {isFilterOpen && (
-             <div className="absolute right-14 top-0 bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-3 flex flex-col gap-2 animate-scale-in w-32 origin-top-right">
-                <div className="text-xs text-gray-400 font-bold uppercase mb-1">Filter Map</div>
-                <div className="grid grid-cols-2 gap-2">
-                   {GRADES.map(grade => (
-                     <button
-                       key={grade}
-                       onClick={() => toggleGradeFilter(grade)}
-                       className={`
-                         text-sm font-bold py-1.5 rounded transition border
-                         ${selectedGrades.includes(grade) 
-                            ? `${getGradeColor(grade)} bg-gray-700 border-gray-600` 
-                            : 'text-gray-600 border-transparent hover:bg-gray-700/50'}
-                       `}
-                     >
-                       {grade}
-                     </button>
-                   ))}
-                </div>
-                <div className="border-t border-gray-700 mt-1 pt-2 flex justify-between text-[10px]">
-                   <button onClick={() => setSelectedGrades(GRADES)} className="text-blue-400 hover:text-blue-300">All</button>
-                   <button onClick={() => setSelectedGrades([])} className="text-gray-500 hover:text-gray-400">None</button>
-                </div>
-             </div>
+           {(isFilterOpen || isFilterClosing) && (
+             <>
+               {/* Transparent Backdrop to close on outside click */}
+               <div className="fixed inset-0 z-10" onClick={closeFilter}></div>
+
+               <div className={`absolute right-14 top-0 bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-3 flex flex-col gap-2 z-20 w-32 origin-top-right ${isFilterClosing ? 'animate-scale-out' : 'animate-scale-in'}`}>
+                  <div className="text-xs text-gray-400 font-bold uppercase mb-1">Filter Map</div>
+                  <div className="grid grid-cols-2 gap-2">
+                     {GRADES.map(grade => (
+                       <button
+                         key={grade}
+                         onClick={() => toggleGradeFilter(grade)}
+                         className={`
+                           text-sm font-bold py-1.5 rounded transition border
+                           ${selectedGrades.includes(grade) 
+                              ? `${getGradeColor(grade)} bg-gray-700 border-gray-600` 
+                              : 'text-gray-600 border-transparent hover:bg-gray-700/50'}
+                         `}
+                       >
+                         {grade}
+                       </button>
+                     ))}
+                  </div>
+                  <div className="border-t border-gray-700 mt-1 pt-2 flex justify-between text-[10px]">
+                     <button onClick={() => setSelectedGrades(GRADES)} className="text-blue-400 hover:text-blue-300">All</button>
+                     <button onClick={() => setSelectedGrades([])} className="text-gray-500 hover:text-gray-400">None</button>
+                  </div>
+               </div>
+             </>
            )}
         </div>
 

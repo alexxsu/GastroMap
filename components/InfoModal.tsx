@@ -15,6 +15,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose, onClearDatabase }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = () => {
+    if (isClosing) return;
     setIsClosing(true);
     setTimeout(onClose, 200);
   };
@@ -29,8 +30,14 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose, onClearDatabase }) => {
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`}>
-      <div className="bg-gray-800 w-full max-w-lg rounded-2xl border border-gray-700 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div 
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`}
+      onClick={handleClose}
+    >
+      <div 
+        className="bg-gray-800 w-full max-w-lg rounded-2xl border border-gray-700 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900/50">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
