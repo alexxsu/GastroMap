@@ -4,7 +4,7 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyCHoA2Vegt3SaybflKyedD7Y33o6kUPZr0",
   authDomain: "gastromap-c12c3.firebaseapp.com",
   projectId: "gastromap-c12c3",

@@ -155,7 +155,7 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
             await navigator.share({
               files: [file],
               title: restaurant.name,
-              text: `Check out my experience at ${restaurant.name} on 宝宝少爷寻味地图!`
+              text: `Check out my experience at ${restaurant.name} on GourmetMaps!`
             });
           } catch (shareError) {
              downloadImage(canvas);
@@ -219,7 +219,7 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
   return (
     <>
       <div 
-        className={`absolute bottom-0 left-0 right-0 h-[92%] sm:h-full sm:top-0 sm:left-auto sm:right-0 sm:w-[400px] bg-gray-900 border-t sm:border-t-0 sm:border-l border-gray-800 shadow-2xl z-20 flex flex-col rounded-t-2xl sm:rounded-none ${animationClass}`}
+        className={`absolute bottom-0 left-0 right-0 h-[80%] sm:h-full sm:top-0 sm:left-auto sm:right-0 sm:w-[400px] bg-gray-900 border-t sm:border-t-0 sm:border-l border-gray-800 shadow-2xl z-20 flex flex-col rounded-t-2xl sm:rounded-none ${animationClass}`}
         style={{ 
           transform: isDragging ? `translateY(${dragY}px)` : undefined,
           transition: isDragging ? 'none' : undefined
@@ -228,7 +228,7 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
         
         {/* Header - Draggable Area */}
         <div 
-          className="relative h-48 bg-gray-800 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none rounded-t-2xl sm:rounded-none overflow-hidden"
+          className="relative h-32 sm:h-48 bg-gray-800 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none rounded-t-2xl sm:rounded-none overflow-hidden"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
@@ -251,7 +251,7 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
             <X size={20} />
           </button>
           <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none">
-            <h1 className="text-2xl font-bold text-white leading-tight">{restaurant.name}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">{restaurant.name}</h1>
             <div className="flex items-center gap-1 text-gray-300 text-xs mt-1">
               <MapPin size={12} />
               <span className="truncate">{restaurant.address}</span>
@@ -344,8 +344,14 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
 
                         <ImageSlider photos={photos} />
 
+                        {/* Rating Overlay (Bottom Right of Image) - Bigger Size */}
+                        <div className={`absolute bottom-2 right-2 z-20 w-16 h-16 flex items-center justify-center rounded-xl shadow-lg font-black text-4xl text-white border border-white/20 backdrop-blur-md bg-black/50 ${getGradeColor(visit.rating)}`}>
+                          {visit.rating}
+                        </div>
+
+                        {/* User Profile (Bottom Left of Image) */}
                         {visit.creatorName && (
-                          <div className="absolute bottom-2 left-2 z-10 bg-black/60 backdrop-blur-md pl-1 pr-3 py-1 rounded-full flex items-center gap-2 max-w-[85%] border border-white/10 pointer-events-none">
+                          <div className="absolute bottom-2 left-2 z-10 bg-black/60 backdrop-blur-md pl-1 pr-3 py-1 rounded-full flex items-center gap-2 max-w-[70%] border border-white/10 pointer-events-none">
                             {visit.creatorPhotoURL ? (
                                <img src={visit.creatorPhotoURL} alt="User" className="w-5 h-5 rounded-full object-cover border border-gray-400" />
                             ) : (
@@ -361,19 +367,14 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
                       </div>
                       
                       <div className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className={`flex items-center justify-center w-8 h-8 rounded-lg bg-gray-700 font-bold ${getGradeColor(visit.rating)}`}>
-                            {visit.rating}
-                          </div>
-                          <div className="flex items-center gap-1 text-gray-500 text-xs mt-1">
-                            <Calendar size={12} />
-                            <span>{formatDate(visit.date)}</span>
-                          </div>
-                        </div>
-                        
                         {visit.comment && (
-                          <p className="text-gray-300 text-sm mb-3">"{visit.comment}"</p>
+                          <p className="text-gray-300 text-sm mb-2">"{visit.comment}"</p>
                         )}
+                        
+                        <div className="flex items-center gap-1 text-gray-500 text-xs">
+                           <Calendar size={12} />
+                           <span>{formatDate(visit.date)}</span>
+                        </div>
                       </div>
                     </div>
                   );
@@ -424,13 +425,6 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
         {/* Footer Actions */}
         {activeTab === 'timeline' && (
           <div className="p-4 border-t border-gray-800 bg-gray-900 flex-shrink-0">
-            {/* 
-              Check if user can add visits. Guests can view but NOT add (as per "cant edit" request).
-              Actually, usually adding is "creating", editing is "modifying". 
-              The prompt said "visitor can still view, but cant edit".
-              Does creating count as editing? Usually yes in read-only mode.
-              I will hide the 'Add Another Visit' button for Guests.
-            */}
             {currentUserUid !== GUEST_ID && (
               <button 
                 onClick={onAddAnotherVisit}
@@ -449,7 +443,7 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
         className="fixed top-0 left-[-9999px] w-[400px] bg-gray-900 text-white p-6 border border-gray-800"
       >
         <div className="text-center mb-6">
-           <h2 className="text-xl font-bold text-white mb-1">宝宝少爷寻味地图</h2>
+           <h2 className="text-xl font-bold text-white mb-1">GourmetMaps</h2>
            <div className="w-48 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mb-4 rounded-full shadow-sm"></div>
            <h1 className="text-2xl font-black text-blue-400 mb-2 px-4 leading-tight">{restaurant.name}</h1>
            <p className="text-gray-400 text-xs flex items-center justify-center gap-1">

@@ -1,0 +1,48 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Purple Utensils Glow -->
+  <filter id="purpleGlow" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="10" result="blur"/>
+    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+  </filter>
+
+  <!-- Left Fork (Purple) -->
+  <path d="M110 180V320C110 330 115 350 130 365L170 405" stroke="#8B5CF6" stroke-width="35" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M85 130V200C85 220 110 220 110 200V130" stroke="#8B5CF6" stroke-width="25" stroke-linecap="round"/>
+  <path d="M135 130V200C135 220 110 220 110 200" stroke="#8B5CF6" stroke-width="25" stroke-linecap="round"/>
+  <path d="M110 220V320" stroke="#8B5CF6" stroke-width="25" stroke-linecap="round"/>
+
+  <!-- Right Spoon (Purple) -->
+  <path d="M402 180V320C402 330 397 350 382 365L342 405" stroke="#8B5CF6" stroke-width="35" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="402" cy="150" rx="35" ry="50" stroke="#8B5CF6" stroke-width="25" fill="none"/>
+  <line x1="402" y1="200" x2="402" y2="320" stroke="#8B5CF6" stroke-width="25" stroke-linecap="round"/>
+
+  <!-- Main Pin Body (Yellow/Orange Gradient) -->
+  <defs>
+    <linearGradient id="pinGradient" x1="256" y1="50" x2="256" y2="450" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FCD34D"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <path d="M256 50C167.6 50 96 121.6 96 210C96 330 256 462 256 462C256 462 416 330 416 210C416 121.6 344.4 50 256 50Z" fill="url(#pinGradient)" filter="url(#shadow)"/>
+  
+  <!-- Map Lines (Subtle) -->
+  <path d="M256 50V462" stroke="white" stroke-width="4" stroke-opacity="0.3"/>
+  <path d="M96 210H416" stroke="white" stroke-width="4" stroke-opacity="0.3"/>
+  <path d="M160 100C200 150 312 150 352 100" stroke="white" stroke-width="4" stroke-opacity="0.3" fill="none"/>
+
+  <!-- Cute Face -->
+  <!-- Eyes -->
+  <circle cx="196" cy="220" r="18" fill="#1F2937"/>
+  <circle cx="316" cy="220" r="18" fill="#1F2937"/>
+  
+  <!-- Cheeks -->
+  <circle cx="170" cy="250" r="16" fill="#F87171" opacity="0.8"/>
+  <circle cx="342" cy="250" r="16" fill="#F87171" opacity="0.8"/>
+
+  <!-- Mouth -->
+  <path d="M226 250C226 250 240 270 256 270C272 270 286 250 286 250" stroke="#1F2937" stroke-width="8" stroke-linecap="round" fill="none"/>
+</svg>

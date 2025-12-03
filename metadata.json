@@ -1,6 +1,6 @@
 {
-  "name": "Copy of GastroMap",
-  "description": "A photo-first restaurant tracker. Map your culinary journey, auto-detect restaurants from photo locations, and use Gemini to describe your dishes.",
+  "name": "GourmetMaps",
+  "description": "A photo-first restaurant tracker. Map your culinary journey, auto-detect restaurants from photo locations.",
   "requestFramePermissions": [
     "geolocation"
   ]

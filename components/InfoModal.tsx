@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { X, MapPin, Camera, Trash2, Settings, Lock } from 'lucide-react';
 import { GRADES, getGradeColor, getGradeDescription } from '../utils/rating';
@@ -6,27 +5,17 @@ import { GRADES, getGradeColor, getGradeDescription } from '../utils/rating';
 interface InfoModalProps {
   onClose: () => void;
   onClearDatabase?: () => void;
+  isAdmin: boolean;
 }
 
-const InfoModal: React.FC<InfoModalProps> = ({ onClose, onClearDatabase }) => {
+const InfoModal: React.FC<InfoModalProps> = ({ onClose, onClearDatabase, isAdmin }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [password, setPassword] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = () => {
     if (isClosing) return;
     setIsClosing(true);
     setTimeout(onClose, 200);
-  };
-
-  const handleUnlock = () => {
-    if (password === 'sqxwazjl123') {
-      setIsAuthenticated(true);
-    } else {
-      alert("Incorrect password");
-      setPassword('');
-    }
   };
 
   return (
@@ -40,96 +29,84 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose, onClearDatabase }) => {
       >
         
         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900/50">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="text-blue-500">ℹ️</span> About 宝宝少爷寻味地图
-          </h2>
+          <h2 className="text-lg font-semibold text-white">About GourmetMaps</h2>
           <button onClick={handleClose} className="p-1 hover:bg-gray-700 rounded-full text-gray-400 hover:text-white transition">
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-6 text-gray-300 flex-1">
-          
-          <section>
-            <h3 className="text-white font-semibold mb-2">How it works</h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex gap-3">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="bg-gray-700/30 rounded-xl p-4 border border-gray-700">
+            <h3 className="text-white font-bold mb-2">How it works</h3>
+            <ul className="space-y-3 text-sm text-gray-300">
+              <li className="flex gap-2">
                 <Camera size={18} className="text-blue-400 flex-shrink-0" />
-                <span>Upload a photo of your food. We extract the GPS location to find the restaurant automatically.</span>
+                <span>Upload food photos. The app auto-detects the location from GPS data.</span>
               </li>
-              <li className="flex gap-3">
+              <li className="flex gap-2">
                 <MapPin size={18} className="text-green-400 flex-shrink-0" />
-                <span>We mark it on your map. You can add comments and ratings for every visit.</span>
+                <span>Memories are pinned to the map. Click clusters to zoom in.</span>
               </li>
             </ul>
-          </section>
+          </div>
 
-          <section>
-             <h3 className="text-white font-semibold mb-2">Grading System</h3>
-             <div className="grid gap-2 text-sm">
+          <div>
+             <h3 className="text-white font-bold mb-2">Rating System</h3>
+             <div className="grid grid-cols-1 gap-2">
                {GRADES.map(grade => (
-                 <div key={grade} className="flex items-center gap-3 bg-gray-700/50 p-2 rounded">
-                   <span className={`font-bold text-lg w-8 text-center ${getGradeColor(grade)}`}>{grade}</span>
-                   <span className="text-gray-300 text-xs sm:text-sm">
-                     {getGradeDescription(grade)}
-                   </span>
+                 <div key={grade} className="flex items-center gap-3 bg-gray-900/50 p-2 rounded-lg border border-gray-800">
+                   <span className={`font-bold w-6 text-center ${getGradeColor(grade)}`}>{grade}</span>
+                   <span className="text-xs text-gray-400">{getGradeDescription(grade)}</span>
                  </div>
                ))}
              </div>
-          </section>
-
-          <div className="text-center pt-4">
-             <p className="text-xs text-gray-500">Version 0.1</p>
           </div>
 
-          <div className="border-t border-gray-700 pt-4">
-            <button 
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 transition"
-            >
-              <Settings size={14} />
-              {showAdvanced ? 'Hide Advanced Options' : 'Advanced Options'}
-            </button>
+          <div className="pt-4 border-t border-gray-700">
+             <button 
+               onClick={() => setShowAdvanced(!showAdvanced)}
+               className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 transition"
+             >
+               <Settings size={14} />
+               Advanced Options
+             </button>
 
-            {showAdvanced && (
-              <div className="mt-4 bg-gray-900/50 p-4 rounded-lg border border-gray-700 transition-all">
-                 {!isAuthenticated ? (
-                   <div className="flex flex-col gap-2">
-                     <p className="text-xs text-gray-400 flex items-center gap-1"><Lock size={12}/> Admin Access Required</p>
-                     <div className="flex gap-2">
-                       <input 
-                         type="password" 
-                         value={password}
-                         onChange={(e) => setPassword(e.target.value)}
-                         placeholder="Enter Password"
-                         className="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-white focus:border-blue-500 outline-none"
-                       />
-                       <button 
-                         onClick={handleUnlock}
-                         className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm transition"
-                       >
-                         Unlock
-                       </button>
-                     </div>
+             {showAdvanced && (
+               <div className="mt-4 bg-red-900/10 border border-red-900/30 rounded-xl p-4">
+                 {!isAdmin ? (
+                   <div className="space-y-3">
+                     <p className="text-xs text-red-400 flex items-center gap-1">
+                       <Lock size={12} /> Restricted Access
+                     </p>
+                     <p className="text-xs text-gray-400">
+                       Only administrators can perform advanced actions on the database.
+                     </p>
                    </div>
                  ) : (
-                   <div className="space-y-2">
-                      <p className="text-xs text-green-400 mb-2">Access Granted</p>
-                      {onClearDatabase && (
-                        <button 
-                          onClick={onClearDatabase}
-                          className="w-full flex items-center justify-center gap-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-xs border border-red-900 p-3 rounded-lg transition"
-                        >
-                          <Trash2 size={14} />
-                          Reset Database (Delete All Data)
-                        </button>
-                      )}
+                   <div>
+                     <p className="text-xs text-red-400 mb-3 font-bold flex items-center gap-1">
+                       <Lock size={12} /> Admin Control
+                     </p>
+                     <button 
+                       onClick={() => {
+                         if(onClearDatabase) onClearDatabase();
+                         handleClose();
+                       }}
+                       className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition"
+                     >
+                       <Trash2 size={18} />
+                       Reset Database
+                     </button>
+                     <p className="text-[10px] text-red-300/50 text-center mt-2">This will delete all restaurants and visits permanently.</p>
                    </div>
                  )}
-              </div>
-            )}
+               </div>
+             )}
           </div>
 
+          <div className="text-center pt-2">
+            <p className="text-xs text-gray-600">Version 1.0</p>
+          </div>
         </div>
       </div>
     </div>

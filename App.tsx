@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Map as MapIcon, Info, LogOut, UtensilsCrossed, User as UserIcon, BarChart2, Search, X, Crosshair, Minus, LocateFixed, Filter, Lock, Clock, RefreshCw } from 'lucide-react';
+import { Plus, Map as MapIcon, Info, LogOut, User as UserIcon, BarChart2, Search, X, Crosshair, Minus, LocateFixed, Filter, Lock, Clock, RefreshCw } from 'lucide-react';
 import { Restaurant, ViewState, Coordinates, Visit, GUEST_ID, UserProfile } from './types';
 import MapContainer from './components/MapContainer';
 import AddVisitModal from './components/AddVisitModal';
@@ -12,7 +11,7 @@ import StatsModal from './components/StatsModal';
 import { calculateAverageGrade, GRADES, getGradeColor } from './utils/rating';
 
 // Firebase Imports
-import { auth, googleProvider, db } from './firebaseConfig';
+import { auth, googleProvider, db, firebaseConfig } from './firebaseConfig';
 import { signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { collection, onSnapshot, doc, setDoc, updateDoc, arrayUnion, getDoc, deleteDoc } from 'firebase/firestore';
 
@@ -24,9 +23,10 @@ interface AppUser {
 }
 
 function App() {
-  const GOOGLE_MAPS_KEY = "AIzaSyCHoA2Vegt3SaybflKyedD7Y33o6kUPZr0";
+  const GOOGLE_MAPS_KEY = firebaseConfig.apiKey;
   
   const [user, setUser] = useState<AppUser | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null); // Store full profile including role
   const [viewState, setViewState] = useState<ViewState>(ViewState.LOGIN);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
@@ -66,6 +66,7 @@ function App() {
         // If user logs out, or was never logged in
         // Only reset to LOGIN if we are not currently in Guest Mode
         setUser((prev) => (prev?.uid === GUEST_ID ? prev : null));
+        setUserProfile(null);
         setViewState((prev) => {
           if (prev === ViewState.MAP && user?.uid === GUEST_ID) return ViewState.MAP;
           return ViewState.LOGIN;
@@ -87,6 +88,8 @@ function App() {
 
         if (userSnap.exists()) {
           const userData = userSnap.data() as UserProfile;
+          setUserProfile(userData); // Save profile to state
+          
           if (userData.status === 'approved') {
             setViewState(ViewState.MAP);
           } else {
@@ -94,12 +97,14 @@ function App() {
           }
         } else {
           // Create new user doc
-          await setDoc(userRef, {
+          const newProfile: UserProfile = {
             email: user.email || 'unknown',
             status: 'pending',
             role: 'user',
             createdAt: new Date().toISOString()
-          });
+          };
+          await setDoc(userRef, newProfile);
+          setUserProfile(newProfile);
           setViewState(ViewState.PENDING);
         }
       } catch (err) {
@@ -222,6 +227,7 @@ function App() {
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         const userData = userSnap.data() as UserProfile;
+        setUserProfile(userData);
         if (userData.status === 'approved') {
           setViewState(ViewState.MAP);
         } else {
@@ -459,18 +465,24 @@ function App() {
             <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[100px]"></div>
          </div>
         <div className="bg-gray-800/80 backdrop-blur p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 z-10 text-center animate-fade-in-up">
-          <div className="flex justify-center mb-6">
-            <div className="bg-gradient-to-tr from-blue-600 to-purple-600 p-4 rounded-2xl shadow-lg">
-              <UtensilsCrossed size={40} className="text-white" />
-            </div>
+          {/* Logo Section */}
+          <div className="flex justify-center mb-8">
+            <img src="/logo.svg" alt="GourmetMaps Logo" className="w-32 h-32 object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">宝宝少爷寻味地图</h1>
+          
+          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">GourmetMaps</h1>
           <p className="text-gray-400 mb-8 leading-relaxed">
             Map your culinary journey. Share food memories with your partner in real-time.
           </p>
+          
+          {/* Informational Badge */}
+          <div className="flex items-center justify-center gap-2 mb-6 bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-full mx-auto w-fit">
+             <span className="text-blue-200 text-sm font-medium tracking-wide">Log in to post and edit experiences</span>
+          </div>
+
           <button 
             onClick={handleLogin}
-            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-900 font-semibold py-3 px-6 rounded-xl transition shadow-lg transform hover:scale-[1.02] mb-4"
+            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-900 font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-black/20 transform hover:scale-[1.02] active:scale-95 mb-4"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -480,11 +492,12 @@ function App() {
             </svg>
             Sign in with Google
           </button>
+          
           <button 
             onClick={handleGuestLogin}
-            className="text-sm text-gray-400 hover:text-white transition underline decoration-gray-600 hover:decoration-white"
+            className="text-sm text-gray-500 hover:text-white transition underline decoration-transparent hover:decoration-white underline-offset-4"
           >
-            Continue as Guest
+            or continue as a guest to view
           </button>
         </div>
       </div>
@@ -542,8 +555,8 @@ function App() {
           <div className="flex items-center gap-2">
             {!isSearchFocused && !searchQuery ? (
                <div className="flex items-center gap-2 px-2 py-1 text-white">
-                 <MapIcon size={18} className="text-blue-500 flex-shrink-0"/> 
-                 <span className="font-bold truncate">宝宝少爷寻味地图</span>
+                 <img src="/logo.svg" className="w-5 h-5 object-contain" alt="Logo" />
+                 <span className="font-bold truncate">GourmetMaps</span>
                </div>
             ) : null}
             
@@ -760,6 +773,7 @@ function App() {
         <InfoModal 
           onClose={() => setViewState(ViewState.MAP)} 
           onClearDatabase={handleClearDatabase}
+          isAdmin={userProfile?.role === 'admin'}
         />
       )}
 

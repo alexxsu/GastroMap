@@ -1,9 +1,9 @@
-
-const CACHE_NAME = 'gastromap-v1';
+const CACHE_NAME = 'gourmetmaps-v4';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/logo.svg'
 ];
 
 self.addEventListener('install', (event) => {

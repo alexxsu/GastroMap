@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -10,6 +9,7 @@ interface ImageSliderProps {
 const ImageSlider: React.FC<ImageSliderProps> = ({ photos }) => {
   const [index, setIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   
   // Use Refs for touch tracking to avoid state update lag during gestures
   const touchStartRef = useRef<number | null>(null);
@@ -35,6 +35,15 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ photos }) => {
     }
   };
 
+  const handleLightboxClose = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsLightboxOpen(false);
+      setIsClosing(false);
+    }, 200); // Duration matches CSS scaleOut animation
+  };
+
   // Keyboard navigation for lightbox
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -45,7 +54,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ photos }) => {
       } else if (e.key === 'ArrowLeft') {
         if (index > 0) setIndex(prev => prev - 1);
       } else if (e.key === 'Escape') {
-        setIsLightboxOpen(false);
+        handleLightboxClose();
       }
     };
 
@@ -156,8 +165,8 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ photos }) => {
       {/* Fullscreen Lightbox Portal */}
       {isLightboxOpen && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center animate-scale-in"
-          onClick={() => setIsLightboxOpen(false)}
+          className={`fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`}
+          onClick={handleLightboxClose}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
@@ -165,10 +174,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ photos }) => {
           {/* Close Button - Top Right (Fixed Position) */}
           <button 
              className="absolute top-4 right-4 z-[60] p-3 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all cursor-pointer hover:scale-105"
-             onClick={(e) => {
-               e.stopPropagation();
-               setIsLightboxOpen(false);
-             }}
+             onClick={handleLightboxClose}
           >
             <X size={32} />
           </button>

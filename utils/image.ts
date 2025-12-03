@@ -1,9 +1,9 @@
 
 /**
  * Resizes and compresses an image file.
- * Target: JPEG, Max 1600px dimension, 0.8 Quality.
+ * Target: JPEG, Max 1920px dimension, 0.9 Quality for clearer images.
  */
-export const compressImage = (file: File | Blob, maxWidth = 1600, quality = 0.8): Promise<Blob> => {
+export const compressImage = (file: File | Blob, maxWidth = 1920, quality = 0.9): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
