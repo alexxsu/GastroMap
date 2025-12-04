@@ -80,15 +80,20 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
     // Swipe up to expand (when not already expanded)
     if (!isExpanded && dragY < -100) {
       setDragY(0);
-      setIsExpanding(true);
-      // Trigger expansion immediately, let CSS handle the animation
-      requestAnimationFrame(() => {
-        setIsExpanded(true);
-        // Clean up isExpanding state after animation completes
-        setTimeout(() => {
-          setIsExpanding(false);
-        }, 400);
-      });
+      // Use a small delay to ensure the browser processes the reset first
+      setTimeout(() => {
+        setIsExpanding(true);
+        // Wait for next frame, then trigger expansion
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setIsExpanded(true);
+            // Clean up isExpanding state after animation completes
+            setTimeout(() => {
+              setIsExpanding(false);
+            }, 450);
+          });
+        });
+      }, 10);
     }
     // Swipe down to close
     else if (dragY > 150) {
@@ -242,13 +247,15 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
   return (
     <>
       <div
-        className={`absolute bottom-0 left-0 right-0 ${isExpanded || isExpanding ? 'h-full top-0' : 'h-[80%]'} sm:h-full sm:top-0 sm:left-auto sm:right-0 sm:w-[400px] bg-gray-900 border-t sm:border-t-0 sm:border-l border-gray-800 shadow-2xl z-20 flex flex-col ${isExpanded || isExpanding ? 'rounded-none' : 'rounded-t-2xl'} sm:rounded-none ${animationClass}`}
+        className={`absolute bottom-0 left-0 right-0 sm:h-full sm:top-0 sm:left-auto sm:right-0 sm:w-[400px] bg-gray-900 border-t sm:border-t-0 sm:border-l border-gray-800 shadow-2xl z-20 flex flex-col ${isExpanded ? 'rounded-none' : 'rounded-t-2xl'} sm:rounded-none ${animationClass}`}
         style={{
+          height: window.innerWidth < 640 ? (isExpanded ? '100vh' : '80vh') : '100vh',
+          top: window.innerWidth < 640 ? (isExpanded ? '0' : 'auto') : '0',
           transform: isDragging ? `translateY(${dragY}px)` : undefined,
           transition: isDragging
             ? 'none'
-            : 'height 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-          willChange: isDragging ? 'transform' : isExpanding ? 'height' : 'auto'
+            : 'height 0.45s cubic-bezier(0.4, 0, 0.2, 1), top 0.45s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          willChange: isDragging ? 'transform' : (isExpanding || isExpanded) ? 'height, top' : 'auto'
         }}
       >
         
