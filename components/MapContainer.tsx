@@ -90,25 +90,25 @@ const MapContainer: React.FC<MapContainerProps> = ({ apiKey, restaurants, onMark
         gestureHandling: 'greedy', 
       });
 
-      // Custom cluster renderer with logical color gradient
+      // Custom cluster renderer with blue gradient
       const renderer = {
         render: ({ count, position }: { count: number; position: google.maps.LatLng }) => {
-          // Logical color gradient: amber → orange → red (heat map style)
+          // Logical color gradient: cyan → blue → dark blue → navy (cool gradient)
           let backgroundColor: string;
           let textColor = 'white';
 
           if (count < 10) {
-            // Small clusters: Light amber (matches single markers)
-            backgroundColor = '#F59E0B'; // amber-500
+            // Small clusters: Cyan
+            backgroundColor = '#06B6D4'; // cyan-500
           } else if (count < 30) {
-            // Medium clusters: Orange
-            backgroundColor = '#EA580C'; // orange-600
+            // Medium clusters: Sky blue
+            backgroundColor = '#0EA5E9'; // sky-500
           } else if (count < 100) {
-            // Large clusters: Deep orange
-            backgroundColor = '#DC2626'; // red-600
+            // Large clusters: Blue
+            backgroundColor = '#2563EB'; // blue-600
           } else {
-            // Very large clusters: Dark red
-            backgroundColor = '#991B1B'; // red-800
+            // Very large clusters: Dark blue
+            backgroundColor = '#1E40AF'; // blue-700
           }
 
           // Create cluster marker element
