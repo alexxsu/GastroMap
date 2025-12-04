@@ -1,6 +1,6 @@
 {
-  "name": "GourmetMaps",
-  "short_name": "GourmetMaps",
+  "name": "TraceBook",
+  "short_name": "TraceBook",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#111827",

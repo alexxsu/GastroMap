@@ -334,7 +334,7 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
                     onChange={handleFileChange}
                   />
                   <Camera size={48} className="text-gray-400 mb-2" />
-                  <p className="text-gray-400 font-medium">Tap to upload food photos</p>
+                  <p className="text-gray-400 font-medium">Tap to upload photos</p>
                   <p className="text-xs text-gray-500 mt-2">Supports multi-select (JPG, PNG, HEIC)</p>
                 </>
               )}
@@ -388,7 +388,7 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
                        type="text" 
                        value={manualSearch}
                        onChange={(e) => handleManualSearch(e.target.value)}
-                       placeholder="Search restaurant manually..."
+                       placeholder="Search place manually..."
                        className="flex-1 bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
                      />
                      <div className="bg-gray-700 px-3 py-2 rounded flex items-center justify-center">
@@ -415,7 +415,7 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       <ImageIcon className="mx-auto mb-2 opacity-50" size={32}/>
-                      <p className="text-sm">No restaurants found nearby.</p>
+                      <p className="text-sm">No places found nearby.</p>
                       <p className="text-xs">Try typing the name above.</p>
                     </div>
                   )}

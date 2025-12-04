@@ -31,6 +31,7 @@ export interface UserProfile {
   status: 'pending' | 'approved' | 'rejected';
   role: 'user' | 'admin';
   createdAt: string;
+  joinedMaps?: string[]; // Array of map IDs user has joined
 }
 
 // Global declaration for Google Maps

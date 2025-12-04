@@ -1,6 +1,6 @@
 {
-  "name": "GourmetMaps",
-  "description": "A photo-first restaurant tracker. Map your culinary journey, auto-detect restaurants from photo locations.",
+  "name": "TraceBook",
+  "description": "A photo-first experience tracker. Map your journey, auto-detect locations from photo GPS data.",
   "requestFramePermissions": [
     "geolocation"
   ]

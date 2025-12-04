@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, MapPin, Map as MapIcon, Info, LogOut, User as UserIcon, BarChart2, Search, X, Crosshair, Minus, LocateFixed, Filter, Lock, Clock, RefreshCw, Layers, Menu, Building2, Settings } from 'lucide-react';
+import { Plus, MapPin, Map as MapIcon, Info, LogOut, User as UserIcon, BarChart2, Search, X, Crosshair, Minus, LocateFixed, Filter, Lock, Clock, RefreshCw, Layers, Menu, Building2, Settings, Users, Globe } from 'lucide-react';
 import { Restaurant, ViewState, Coordinates, Visit, UserProfile, UserMap } from './types';
 import MapContainer from './components/MapContainer';
 import AddVisitModal from './components/AddVisitModal';
@@ -35,6 +35,7 @@ function App() {
   const [allMaps, setAllMaps] = useState<UserMap[]>([]); // For admin map selector
   const [userOwnMaps, setUserOwnMaps] = useState<UserMap[]>([]); // User's own maps (default + shared they created)
   const [userSharedMaps, setUserSharedMaps] = useState<UserMap[]>([]); // Shared maps user created
+  const [userJoinedMaps, setUserJoinedMaps] = useState<UserMap[]>([]); // Shared maps user joined
 
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   
@@ -184,40 +185,47 @@ function App() {
     return () => unsubscribe();
   }, [user, userProfile]);
 
-  // Subscribe to user's own maps (default + shared they created)
+  // Subscribe to user's own maps (default + shared they created) and joined maps
   useEffect(() => {
     if (!user || user.isAnonymous) return;
 
-    // Subscribe to user's maps in maps/{userId}
+    // Subscribe to all maps to find ones user owns or has joined
     const userMapsRef = collection(db, 'maps');
     const unsubscribe = onSnapshot(userMapsRef, (snapshot) => {
       const ownMaps: UserMap[] = [];
       const sharedMaps: UserMap[] = [];
+      const joinedMaps: UserMap[] = [];
 
       snapshot.docs.forEach((docSnap) => {
         const d = docSnap.data() as any;
+        const mapData: UserMap = {
+          id: docSnap.id,
+          ownerUid: d.ownerUid,
+          ownerDisplayName: d.ownerDisplayName,
+          name: d.name,
+          visibility: d.visibility,
+          isDefault: d.isDefault,
+          shareCode: d.shareCode,
+          members: d.members,
+          createdAt: d.createdAt?.toDate?.().toISOString?.() || d.createdAt,
+          updatedAt: d.updatedAt?.toDate?.().toISOString?.() || d.updatedAt,
+        };
+
         if (d.ownerUid === user.uid) {
-          const mapData: UserMap = {
-            id: docSnap.id,
-            ownerUid: d.ownerUid,
-            ownerDisplayName: d.ownerDisplayName,
-            name: d.name,
-            visibility: d.visibility,
-            isDefault: d.isDefault,
-            shareCode: d.shareCode,
-            members: d.members,
-            createdAt: d.createdAt?.toDate?.().toISOString?.() || d.createdAt,
-            updatedAt: d.updatedAt?.toDate?.().toISOString?.() || d.updatedAt,
-          };
+          // User owns this map
           ownMaps.push(mapData);
           if (d.visibility === 'shared') {
             sharedMaps.push(mapData);
           }
+        } else if (d.members && d.members.includes(user.uid)) {
+          // User is a member of this shared map (but not owner)
+          joinedMaps.push(mapData);
         }
       });
 
       setUserOwnMaps(ownMaps);
       setUserSharedMaps(sharedMaps);
+      setUserJoinedMaps(joinedMaps);
     });
 
     return () => unsubscribe();
@@ -325,7 +333,7 @@ function App() {
     }
   };
 
-  const handleGuestLogin = () => {
+  const handleGuestLogin = async () => {
     // Set guest user state directly (view-only mode)
     const guestProfile: UserProfile = {
       email: 'guest@tracebook.app',
@@ -334,14 +342,28 @@ function App() {
       createdAt: new Date().toISOString()
     };
 
-    setUser({
+    const guestUser = {
       uid: 'guest-user',
       displayName: 'Guest',
       photoURL: null,
       email: 'guest@tracebook.app',
       isAnonymous: true
-    });
+    };
+
+    setUser(guestUser);
     setUserProfile(guestProfile);
+    
+    // Set a demo map for guest users
+    const demoMap: UserMap = {
+      id: 'demo-map',
+      ownerUid: 'guest-user',
+      ownerDisplayName: 'Demo',
+      name: 'Demo Map',
+      visibility: 'public',
+      isDefault: true,
+      createdAt: new Date().toISOString()
+    };
+    setActiveMap(demoMap);
     setViewState(ViewState.MAP);
   };
 
@@ -726,6 +748,45 @@ function App() {
     await setDoc(doc(db, 'maps', mapId), newMap);
   };
 
+  const handleJoinSharedMap = async (code: string): Promise<boolean> => {
+    if (!user || user.isAnonymous) {
+      throw new Error('Must be logged in to join shared maps');
+    }
+
+    // Search for map with this share code
+    const mapsRef = collection(db, 'maps');
+    const snapshot = await getDocs(mapsRef);
+    
+    let foundMap: any = null;
+    let foundMapId: string | null = null;
+    
+    snapshot.docs.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.shareCode === code && data.visibility === 'shared') {
+        foundMap = data;
+        foundMapId = docSnap.id;
+      }
+    });
+
+    if (!foundMap || !foundMapId) {
+      return false; // Map not found
+    }
+
+    // Check if user is already a member
+    if (foundMap.members && foundMap.members.includes(user.uid)) {
+      // Already a member, just return true
+      return true;
+    }
+
+    // Add user to members array
+    const mapRef = doc(db, 'maps', foundMapId);
+    await updateDoc(mapRef, {
+      members: arrayUnion(user.uid)
+    });
+
+    return true;
+  };
+
   const openAddModal = () => setViewState(ViewState.ADD_ENTRY);
 
   const handleToggleAdd = () => {
@@ -865,13 +926,14 @@ function App() {
 
                 {/* Logo/Title - slides out when search focused */}
                 <div
-                  className={`flex items-center gap-2 px-1 py-1 text-white transition-all duration-300 ease-out ${
+                  onClick={(e) => { e.stopPropagation(); setIsSearchFocused(true); }}
+                  className={`flex items-center gap-2 px-1 py-1 text-white transition-all duration-300 ease-out cursor-pointer hover:opacity-80 ${
                     isSearchFocused || searchQuery
                       ? 'opacity-0 scale-95 absolute -translate-x-4 pointer-events-none'
                       : 'opacity-100 scale-100'
                   }`}
                 >
-                  <img src="/logo.svg" className="w-6 h-6 object-contain" alt="Logo" />
+                  <img src="/logo.svg" className="w-8 h-8 object-contain" alt="Logo" />
                   <span className="font-bold truncate">TraceBook</span>
                 </div>
 
@@ -932,36 +994,53 @@ function App() {
               )}
             </div>
 
-            {/* Default Map Pill */}
-            <button
-              onClick={() => setIsCompactCardOpen(prev => !prev)}
-              className={`flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full backdrop-blur border shadow-lg transition-all duration-200 text-sm font-medium pointer-events-auto self-start
-                ${isCompactCardOpen
-                  ? 'bg-blue-600/90 border-blue-400/50 text-white'
-                  : 'bg-gray-900/80 border-gray-700 text-gray-200 hover:bg-gray-800/90 hover:border-gray-600'}
-              `}
-            >
-              {user?.photoURL ? (
-                <img src={user.photoURL} alt="" className="w-6 h-6 rounded-full object-cover border border-gray-600" />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
-                  <UserIcon size={14} className="text-gray-400" />
-                </div>
-              )}
-              <span>Default Map</span>
-            </button>
+            {/* Map Selector Pill */}
+            {activeMap && (
+              <button
+                onClick={() => setIsCompactCardOpen(prev => !prev)}
+                className={`flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full backdrop-blur border shadow-lg transition-all duration-200 text-sm font-medium pointer-events-auto self-start
+                  ${isCompactCardOpen
+                    ? 'bg-blue-600/90 border-blue-400/50 text-white'
+                    : activeMap.isDefault 
+                      ? 'bg-gray-900/80 border-gray-700 text-gray-200 hover:bg-gray-800/90 hover:border-gray-600'
+                      : activeMap.ownerUid === user?.uid
+                        ? 'bg-purple-900/80 border-purple-700 text-purple-200 hover:bg-purple-800/90 hover:border-purple-600'
+                        : 'bg-green-900/80 border-green-700 text-green-200 hover:bg-green-800/90 hover:border-green-600'}
+                `}
+              >
+                {activeMap.isDefault ? (
+                  <Lock size={14} className={isCompactCardOpen ? 'text-white' : 'text-blue-400'} />
+                ) : activeMap.ownerUid === user?.uid ? (
+                  <Users size={14} className={isCompactCardOpen ? 'text-white' : 'text-purple-400'} />
+                ) : (
+                  <Globe size={14} className={isCompactCardOpen ? 'text-white' : 'text-green-400'} />
+                )}
+                <span className="truncate max-w-[120px]">{activeMap.name}</span>
+              </button>
+            )}
 
             {/* Compact Viewing Card - shows active map info */}
             {isCompactCardOpen && activeMap && (
-              <div className="bg-gray-900/90 backdrop-blur border border-gray-700 rounded-xl px-3 py-2 shadow-xl animate-scale-in pointer-events-auto self-start">
+              <div className="bg-gray-900/90 backdrop-blur border border-gray-700 rounded-xl px-3 py-2 shadow-xl animate-scale-in pointer-events-auto self-start min-w-[200px]">
                 <div className="flex items-center gap-2 text-xs text-gray-200">
-                  <span className="inline-flex h-2 w-2 rounded-full bg-green-400 flex-shrink-0" />
+                  <span className={`inline-flex h-2 w-2 rounded-full flex-shrink-0 ${
+                    activeMap.isDefault ? 'bg-blue-400' : 
+                    activeMap.ownerUid === user?.uid ? 'bg-purple-400' : 'bg-green-400'
+                  }`} />
                   <span className="truncate">
                     Viewing: <span className="font-semibold">{activeMap.name}</span>
-                    {activeMap.visibility === 'private' && (
-                      <span className="text-[10px] text-gray-400 ml-1">(Private)</span>
-                    )}
                   </span>
+                </div>
+                
+                {/* Map type label */}
+                <div className="mt-1 text-[10px]">
+                  {activeMap.isDefault ? (
+                    <span className="text-blue-400">Your Default Map</span>
+                  ) : activeMap.ownerUid === user?.uid ? (
+                    <span className="text-purple-400">Shared Map (Owner)</span>
+                  ) : (
+                    <span className="text-green-400">Shared Map by {activeMap.ownerDisplayName}</span>
+                  )}
                 </div>
 
                 {userProfile?.role === 'admin' && allMaps.length > 0 && (
@@ -1169,7 +1248,8 @@ function App() {
             </div>
 
             {/* Menu Items */}
-            <div className="p-3">
+            <div className="p-3 space-y-1">
+              {/* User Profile */}
               <button
                 onClick={() => {
                   closeMenu();
@@ -1187,6 +1267,59 @@ function App() {
                 <div className="text-left">
                   <span className="font-medium block">{user?.displayName || 'User'}</span>
                   <span className="text-xs text-gray-500">View your profile</span>
+                </div>
+              </button>
+
+              {/* Map Management - only for non-guest users */}
+              {!user?.isAnonymous && (
+                <button
+                  onClick={() => {
+                    closeMenu();
+                    setViewState(ViewState.MAP_MANAGEMENT);
+                  }}
+                  className="w-full flex items-center gap-4 px-4 py-3.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200 group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-800 group-hover:bg-gray-700 flex items-center justify-center transition-colors duration-200">
+                    <Layers size={20} className="text-gray-400 group-hover:text-white transition-colors duration-200" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-medium block">Map Management</span>
+                    <span className="text-xs text-gray-500">Manage your maps</span>
+                  </div>
+                </button>
+              )}
+
+              {/* Stats */}
+              <button
+                onClick={() => {
+                  closeMenu();
+                  setViewState(ViewState.STATS);
+                }}
+                className="w-full flex items-center gap-4 px-4 py-3.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200 group"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-800 group-hover:bg-gray-700 flex items-center justify-center transition-colors duration-200">
+                  <BarChart2 size={20} className="text-gray-400 group-hover:text-white transition-colors duration-200" />
+                </div>
+                <div className="text-left">
+                  <span className="font-medium block">Statistics</span>
+                  <span className="text-xs text-gray-500">View your stats</span>
+                </div>
+              </button>
+
+              {/* Info */}
+              <button
+                onClick={() => {
+                  closeMenu();
+                  setViewState(ViewState.INFO);
+                }}
+                className="w-full flex items-center gap-4 px-4 py-3.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200 group"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-800 group-hover:bg-gray-700 flex items-center justify-center transition-colors duration-200">
+                  <Info size={20} className="text-gray-400 group-hover:text-white transition-colors duration-200" />
+                </div>
+                <div className="text-left">
+                  <span className="font-medium block">About</span>
+                  <span className="text-xs text-gray-500">How TraceBook works</span>
                 </div>
               </button>
             </div>
@@ -1344,9 +1477,11 @@ function App() {
         <MapManagementModal
           userMaps={userOwnMaps.filter(m => m.isDefault)}
           sharedMaps={userSharedMaps}
+          joinedMaps={userJoinedMaps}
           activeMap={activeMap}
           onClose={() => setViewState(ViewState.MAP)}
           onCreateSharedMap={handleCreateSharedMap}
+          onJoinSharedMap={handleJoinSharedMap}
           onSelectMap={(map) => {
             setActiveMap(map);
             setViewState(ViewState.MAP);

@@ -45,7 +45,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose, onClearDatabase, isAdmin
               </li>
               <li className="flex gap-2">
                 <MapPin size={18} className="text-green-400 flex-shrink-0" />
-                <span>Memories are pinned to the map. Click clusters to zoom in.</span>
+                <span>Experiences are pinned to the map. Click clusters to zoom in.</span>
               </li>
             </ul>
           </div>

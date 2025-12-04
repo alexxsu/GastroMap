@@ -524,7 +524,7 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
         className="fixed top-0 left-[-9999px] w-[400px] bg-gray-900 text-white p-6 border border-gray-800"
       >
         <div className="text-center mb-6">
-           <h2 className="text-xl font-bold text-white mb-1">GourmetMaps</h2>
+           <h2 className="text-xl font-bold text-white mb-1">TraceBook</h2>
            <div className="w-48 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mb-4 rounded-full shadow-sm"></div>
            <h1 className="text-2xl font-black text-blue-400 mb-2 px-4 leading-tight">{restaurant.name}</h1>
            <p className="text-gray-400 text-xs flex items-center justify-center gap-1">
