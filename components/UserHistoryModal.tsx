@@ -100,7 +100,7 @@ const UserHistoryModal: React.FC<UserHistoryModalProps> = ({
         
         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900/50">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            Your Food Journey <span className="text-gray-500 text-sm font-normal">({allUserVisits.length} memories)</span>
+            Your Journey <span className="text-gray-500 text-sm font-normal">({allUserVisits.length} memories)</span>
           </h2>
           <button onClick={handleClose} className="p-1 hover:bg-gray-700 rounded-full text-gray-400 hover:text-white transition">
             <X size={20} />
@@ -110,7 +110,7 @@ const UserHistoryModal: React.FC<UserHistoryModalProps> = ({
         <div className="p-4 overflow-y-auto space-y-3 bg-gray-900/50 flex-1">
           {allUserVisits.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
-              <p>You haven't logged any food memories yet.</p>
+              <p>You haven't logged any memories yet.</p>
               <p className="text-sm mt-2">Tap the + button to start!</p>
             </div>
           ) : (
@@ -124,7 +124,7 @@ const UserHistoryModal: React.FC<UserHistoryModalProps> = ({
                 >
                   {/* Thumbnail */}
                   <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-900">
-                    <img src={item.photoDataUrl} alt="Food" className="w-full h-full object-cover group-hover:scale-110 transition duration-500" loading="lazy" />
+                    <img src={item.photoDataUrl} alt="Memory" className="w-full h-full object-cover group-hover:scale-110 transition duration-500" loading="lazy" />
                   </div>
 
                   {/* Content */}

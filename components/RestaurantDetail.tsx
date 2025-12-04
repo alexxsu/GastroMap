@@ -281,6 +281,12 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
 
   return (
     <>
+      {/* Backdrop - click to close */}
+      <div
+        className={`fixed inset-0 bg-black/40 z-10 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
+        onClick={() => handleClose('down')}
+      />
+
       <div
         className={`absolute left-0 right-0 sm:h-full sm:top-0 sm:left-auto sm:right-0 sm:w-[400px] bg-gray-900 border-t sm:border-t-0 sm:border-l border-gray-800 shadow-2xl z-20 flex flex-col ${isExpanded ? 'rounded-none' : 'rounded-t-2xl'} sm:rounded-none ${animationClass}`}
         style={{
@@ -518,7 +524,7 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
         className="fixed top-0 left-[-9999px] w-[400px] bg-gray-900 text-white p-6 border border-gray-800"
       >
         <div className="text-center mb-6">
-           <h2 className="text-xl font-bold text-white mb-1">GourmetMaps</h2>
+           <h2 className="text-xl font-bold text-white mb-1">TraceBook</h2>
            <div className="w-48 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mb-4 rounded-full shadow-sm"></div>
            <h1 className="text-2xl font-black text-blue-400 mb-2 px-4 leading-tight">{restaurant.name}</h1>
            <p className="text-gray-400 text-xs flex items-center justify-center gap-1">

@@ -31,6 +31,7 @@ export interface UserProfile {
   status: 'pending' | 'approved' | 'rejected';
   role: 'user' | 'admin';
   createdAt: string;
+  joinedMaps?: string[]; // Array of map IDs user has joined
 }
 
 // Global declaration for Google Maps
@@ -190,6 +191,29 @@ export type PlacesService = google.maps.places.PlacesService;
 export type AutocompleteService = google.maps.places.AutocompleteService;
 export type PlaceResult = google.maps.places.PlaceResult;
 
+
+
+export interface MapMember {
+  uid: string;
+  displayName: string;
+  photoURL?: string | null;
+  joinedAt?: string;
+}
+
+export interface UserMap {
+  id: string;
+  ownerUid: string;
+  ownerDisplayName?: string;
+  name: string; // e.g. "Default Map"
+  visibility: 'private' | 'public' | 'shared';
+  isDefault: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  shareCode?: string; // 4-digit unique code for shared maps
+  members?: string[]; // Array of user UIDs who have access to this shared map
+  memberInfo?: MapMember[]; // Detailed member information
+}
+
 export enum ViewState {
   LOGIN = 'LOGIN',
   PENDING = 'PENDING',
@@ -200,4 +224,5 @@ export enum ViewState {
   USER_HISTORY = 'USER_HISTORY',
   EDIT_ENTRY = 'EDIT_ENTRY',
   STATS = 'STATS',
+  MAP_MANAGEMENT = 'MAP_MANAGEMENT',
 }

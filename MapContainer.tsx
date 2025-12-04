@@ -79,8 +79,11 @@ const animateMarkerOpacity = (
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / duration, 1);
     
-    // Ease out cubic
-    const easeProgress = 1 - Math.pow(1 - progress, 3);
+    // Ease in-out cubic for smoother transitions
+    const easeProgress = progress < 0.5
+      ? 4 * progress * progress * progress
+      : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+    
     const currentOpacity = fromOpacity + (toOpacity - fromOpacity) * easeProgress;
     
     marker.setIcon({
@@ -244,49 +247,23 @@ const MapContainer: React.FC<MapContainerProps> = ({ apiKey, restaurants, onMark
       const prevIds = prevRestaurantIdsRef.current;
       
       // Check if this is a map switch - animate whenever significant changes occur
-      // or when switching between different sets of markers
-      const addedCount = [...currentIds].filter(id => !prevIds.has(id)).length;
-      const removedCount = [...prevIds].filter(id => !currentIds.has(id)).length;
-      const totalChange = addedCount + removedCount;
-      
-      // Animate if: many markers changing, OR all markers are new/removed (map switch)
-      const isMapSwitch = totalChange > 2 || 
-        (prevIds.size > 0 && removedCount === prevIds.size) || 
-        (currentIds.size > 0 && addedCount === currentIds.size && prevIds.size > 0);
-
       try {
-        // A. Fade out and remove old markers
+        // A. Remove old markers (no animation)
         const markersToRemove: google.maps.Marker[] = [];
-        const removePromises: Promise<void>[] = [];
         
         for (const [id, marker] of markersRef.current) {
           if (!currentIds.has(id)) {
-            if (isMapSwitch) {
-              // Animate fade out
-              removePromises.push(new Promise<void>((resolve) => {
-                animateMarkerOpacity(marker, 1, 0, 300, isDarkMode, () => {
-                  marker.setMap(null);
-                  resolve();
-                });
-              }));
-            } else {
-              marker.setMap(null);
-            }
+            marker.setMap(null);
             markersToRemove.push(marker);
             markersRef.current.delete(id);
           }
-        }
-
-        // Wait for fade out animations
-        if (removePromises.length > 0) {
-          await Promise.all(removePromises);
         }
 
         if (markersToRemove.length > 0) {
           clustererRef.current.removeMarkers(markersToRemove);
         }
 
-        // B. Add new markers with fade in animation
+        // B. Add new markers (no animation)
         const newMarkers: google.maps.Marker[] = [];
         
         restaurants.forEach(restaurant => {
@@ -295,7 +272,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ apiKey, restaurants, onMark
               position: restaurant.location,
               title: restaurant.name,
               icon: {
-                url: createPinSvg(isDarkMode, isMapSwitch ? 0 : 1),
+                url: createPinSvg(isDarkMode, 1),
                 scaledSize: new google.maps.Size(36, 48),
                 anchor: new google.maps.Point(18, 48),
               },
@@ -307,13 +284,6 @@ const MapContainer: React.FC<MapContainerProps> = ({ apiKey, restaurants, onMark
 
             markersRef.current.set(restaurant.id, marker);
             newMarkers.push(marker);
-            
-            // Animate fade in for new markers during map switch
-            if (isMapSwitch) {
-              setTimeout(() => {
-                animateMarkerOpacity(marker, 0, 1, 400, isDarkMode);
-              }, 50);
-            }
           }
         });
 
