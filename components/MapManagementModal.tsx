@@ -249,21 +249,8 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
               </div>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-xs text-gray-400">{styles.label}</span>
-                {map.shareCode && type === 'created' && (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopyCode(map.shareCode!);
-                    }}
-                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition cursor-pointer"
-                  >
-                    <span className="font-mono bg-gray-600 px-1.5 py-0.5 rounded">{map.shareCode}</span>
-                    {copiedCode === map.shareCode ? (
-                      <Check size={12} className="text-green-400" />
-                    ) : (
-                      <Copy size={12} />
-                    )}
-                  </span>
+                {map.shareCode && (type === 'created' || type === 'joined') && (
+                  <span className="font-mono text-xs bg-gray-600 text-gray-300 px-1.5 py-0.5 rounded">{map.shareCode}</span>
                 )}
                 {type === 'joined' && map.ownerDisplayName && (
                   <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -275,21 +262,38 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
             </div>
           </button>
 
-          {/* Settings gear inside the box for created and joined maps */}
-          {(type === 'created' || type === 'joined') && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleSettings(map.id);
-              }}
-              className={`p-2 rounded-lg transition-all duration-200 ${
-                isSettingsOpen 
-                  ? 'bg-gray-600 text-white rotate-90' 
-                  : 'bg-gray-600/50 text-gray-400 hover:text-white hover:bg-gray-600'
-              }`}
-            >
-              <Settings size={16} />
-            </button>
+          {/* Copy code and Settings gear for created and joined maps */}
+          {(type === 'created' || type === 'joined') && map.shareCode && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyCode(map.shareCode!);
+                }}
+                className="p-2 rounded-lg transition-all duration-200 bg-gray-600/50 text-gray-400 hover:text-white hover:bg-gray-600"
+                title="Copy share code"
+              >
+                {copiedCode === map.shareCode ? (
+                  <Check size={16} className="text-green-400" />
+                ) : (
+                  <Copy size={16} />
+                )}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleSettings(map.id);
+                }}
+                className={`p-2 rounded-lg transition-all duration-200 ${
+                  isSettingsOpen
+                    ? 'bg-gray-600 text-white rotate-90'
+                    : 'bg-gray-600/50 text-gray-400 hover:text-white hover:bg-gray-600'
+                }`}
+                title="Settings"
+              >
+                <Settings size={16} />
+              </button>
+            </div>
           )}
         </div>
 
