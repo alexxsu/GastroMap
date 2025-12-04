@@ -282,15 +282,17 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
   return (
     <>
       <div
-        className={`absolute bottom-0 left-0 right-0 sm:h-full sm:top-0 sm:left-auto sm:right-0 sm:w-[400px] bg-gray-900 border-t sm:border-t-0 sm:border-l border-gray-800 shadow-2xl z-20 flex flex-col ${isExpanded ? 'rounded-none' : 'rounded-t-2xl'} sm:rounded-none ${animationClass}`}
+        className={`absolute left-0 right-0 sm:h-full sm:top-0 sm:left-auto sm:right-0 sm:w-[400px] bg-gray-900 border-t sm:border-t-0 sm:border-l border-gray-800 shadow-2xl z-20 flex flex-col ${isExpanded ? 'rounded-none' : 'rounded-t-2xl'} sm:rounded-none ${animationClass}`}
         style={{
-          height: window.innerWidth < MOBILE_BREAKPOINT ? ((isExpanding || isExpanded) ? '100vh' : '80vh') : '100vh',
-          top: window.innerWidth < MOBILE_BREAKPOINT ? ((isExpanding || isExpanded) ? '0' : 'auto') : '0',
-          transform: isDragging ? `translateY(${dragY}px)` : undefined,
+          // Use bottom positioning with height for smooth animation
+          bottom: window.innerWidth < MOBILE_BREAKPOINT ? 0 : 'auto',
+          top: window.innerWidth < MOBILE_BREAKPOINT ? 'auto' : 0,
+          height: window.innerWidth < MOBILE_BREAKPOINT ? ((isExpanding || isExpanded) ? '100%' : '80%') : '100%',
+          transform: isDragging ? `translateY(${dragY}px)` : 'translateY(0)',
           transition: isDragging
             ? 'none'
-            : `height ${MODAL_TRANSITION_DURATION}ms cubic-bezier(0.4, 0, 0.2, 1), top ${MODAL_TRANSITION_DURATION}ms cubic-bezier(0.4, 0, 0.2, 1), border-radius ${CLOSE_ANIMATION_DURATION}ms cubic-bezier(0.4, 0, 0.2, 1), transform ${CLOSE_ANIMATION_DURATION}ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
-          willChange: isDragging ? 'transform' : (isExpanding || isExpanded) ? 'height, top' : 'auto'
+            : `height ${MODAL_TRANSITION_DURATION}ms cubic-bezier(0.32, 0.72, 0, 1), border-radius ${MODAL_TRANSITION_DURATION}ms cubic-bezier(0.32, 0.72, 0, 1), transform ${CLOSE_ANIMATION_DURATION}ms cubic-bezier(0.32, 0.72, 0, 1)`,
+          willChange: 'height, transform'
         }}
       >
         

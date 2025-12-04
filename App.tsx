@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, MapPin, Map as MapIcon, Info, LogOut, User as UserIcon, BarChart2, Search, X, Crosshair, Minus, LocateFixed, Filter, Lock, Clock, RefreshCw, Layers } from 'lucide-react';
+import { Plus, MapPin, Map as MapIcon, Info, LogOut, User as UserIcon, BarChart2, Search, X, Crosshair, Minus, LocateFixed, Filter, Lock, Clock, RefreshCw, Layers, Menu } from 'lucide-react';
 import { Restaurant, ViewState, Coordinates, Visit, GUEST_ID, UserProfile } from './types';
 import MapContainer from './components/MapContainer';
 import AddVisitModal from './components/AddVisitModal';
@@ -43,7 +43,12 @@ function App() {
   // UI State
   const [hideAddButton, setHideAddButton] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-  const [mapType, setMapType] = useState<'satellite' | 'roadmap'>('satellite');
+  const [mapType, setMapType] = useState<'satellite' | 'roadmap' | 'dark'>('satellite');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuClosing, setIsMenuClosing] = useState(false);
+  const [isMenuAnimatingIn, setIsMenuAnimatingIn] = useState(false);
+  const [isUserDetailOpen, setIsUserDetailOpen] = useState(false);
+  const [isUserDetailClosing, setIsUserDetailClosing] = useState(false);
 
   const [editingData, setEditingData] = useState<{ restaurant: Restaurant, visit: Visit } | null>(null);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
@@ -267,11 +272,51 @@ function App() {
     });
   }, []);
 
+  // Dark mode map styles
+  const darkModeStyles: google.maps.MapTypeStyle[] = [
+    { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
+    { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ color: "#4b6878" }] },
+    { featureType: "administrative.land_parcel", elementType: "labels.text.fill", stylers: [{ color: "#64779e" }] },
+    { featureType: "administrative.province", elementType: "geometry.stroke", stylers: [{ color: "#4b6878" }] },
+    { featureType: "landscape.man_made", elementType: "geometry.stroke", stylers: [{ color: "#334e87" }] },
+    { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#023e58" }] },
+    { featureType: "poi", elementType: "geometry", stylers: [{ color: "#283d6a" }] },
+    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#6f9ba5" }] },
+    { featureType: "poi", elementType: "labels.text.stroke", stylers: [{ color: "#1d2c4d" }] },
+    { featureType: "poi.park", elementType: "geometry.fill", stylers: [{ color: "#023e58" }] },
+    { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#3C7680" }] },
+    { featureType: "road", elementType: "geometry", stylers: [{ color: "#304a7d" }] },
+    { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#98a5be" }] },
+    { featureType: "road", elementType: "labels.text.stroke", stylers: [{ color: "#1d2c4d" }] },
+    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#2c6675" }] },
+    { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#255763" }] },
+    { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#b0d5ce" }] },
+    { featureType: "road.highway", elementType: "labels.text.stroke", stylers: [{ color: "#023e58" }] },
+    { featureType: "transit", elementType: "labels.text.fill", stylers: [{ color: "#98a5be" }] },
+    { featureType: "transit", elementType: "labels.text.stroke", stylers: [{ color: "#1d2c4d" }] },
+    { featureType: "transit.line", elementType: "geometry.fill", stylers: [{ color: "#283d6a" }] },
+    { featureType: "transit.station", elementType: "geometry", stylers: [{ color: "#3a4762" }] },
+    { featureType: "water", elementType: "geometry", stylers: [{ color: "#0e1626" }] },
+    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4e6d70" }] },
+  ];
+
   const handleToggleMapType = () => {
     if (mapInstance) {
-      const newType = mapType === 'satellite' ? 'roadmap' : 'satellite';
-      mapInstance.setMapTypeId(newType);
-      setMapType(newType);
+      if (mapType === 'satellite') {
+        mapInstance.setMapTypeId('roadmap');
+        mapInstance.setOptions({ styles: [] });
+        setMapType('roadmap');
+      } else if (mapType === 'roadmap') {
+        mapInstance.setMapTypeId('roadmap');
+        mapInstance.setOptions({ styles: darkModeStyles });
+        setMapType('dark');
+      } else {
+        mapInstance.setMapTypeId('satellite');
+        mapInstance.setOptions({ styles: [] });
+        setMapType('satellite');
+      }
     }
   };
 
@@ -326,6 +371,37 @@ function App() {
     setTimeout(() => {
       setIsFilterOpen(false);
       setIsFilterClosing(false);
+    }, 200);
+  };
+
+  const closeMenu = () => {
+    setIsMenuClosing(true);
+    setTimeout(() => {
+      setIsMenuOpen(false);
+      setIsMenuClosing(false);
+      setIsMenuAnimatingIn(false);
+    }, 300);
+  };
+
+  const handleMenuToggle = () => {
+    if (isMenuOpen) {
+      closeMenu();
+    } else {
+      setIsMenuOpen(true);
+      // Trigger animation after render
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsMenuAnimatingIn(true);
+        });
+      });
+    }
+  };
+
+  const closeUserDetail = () => {
+    setIsUserDetailClosing(true);
+    setTimeout(() => {
+      setIsUserDetailOpen(false);
+      setIsUserDetailClosing(false);
     }, 200);
   };
 
@@ -565,24 +641,32 @@ function App() {
       {/* Top Left Controls */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 w-[calc(100%-6rem)] max-w-sm pointer-events-none">
         {/* Header / Search Bar */}
-        <div 
+        <div
           className="bg-gray-800/90 backdrop-blur border border-gray-700 p-2 rounded-xl shadow-lg pointer-events-auto transition-all duration-200 focus-within:ring-2 focus-within:ring-blue-500 cursor-text"
           onClick={() => setIsSearchFocused(true)}
         >
           <div className="flex items-center gap-2">
+            {/* Hamburger Menu Button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); handleMenuToggle(); }}
+              className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors duration-200 flex-shrink-0"
+            >
+              <Menu size={20} />
+            </button>
+
             {!isSearchFocused && !searchQuery ? (
-               <div className="flex items-center gap-2 px-2 py-1 text-white">
+               <div className="flex items-center gap-2 px-1 py-1 text-white">
                  <img src="/logo.svg" className="w-5 h-5 object-contain" alt="Logo" />
                  <span className="font-bold truncate">GourmetMaps</span>
                </div>
             ) : null}
-            
+
             <div className={`flex-1 flex items-center bg-gray-700/50 rounded-lg px-2 py-1 ${!isSearchFocused && !searchQuery ? 'hidden' : 'flex'}`}>
               <Search size={14} className="text-gray-400 mr-2" />
-              <input 
+              <input
                 ref={searchInputRef}
-                type="text" 
-                placeholder="Search your memories..." 
+                type="text"
+                placeholder="Search your memories..."
                 className="bg-transparent border-none focus:outline-none text-sm text-white w-full placeholder-gray-500"
                 value={searchQuery}
                 onFocus={() => setIsSearchFocused(true)}
@@ -602,13 +686,13 @@ function App() {
                </button>
             )}
           </div>
-          
+
           {searchQuery && (
              <div className="mt-2 border-t border-gray-700 pt-2 max-h-60 overflow-y-auto">
                {searchResults.length > 0 ? (
                  searchResults.map(r => (
-                   <button 
-                     key={r.id} 
+                   <button
+                     key={r.id}
                      onClick={(e) => { e.stopPropagation(); handleSearchSelect(r); }}
                      className="w-full text-left px-2 py-2 hover:bg-gray-700 rounded text-sm text-gray-300 hover:text-white flex flex-col"
                    >
@@ -732,13 +816,141 @@ function App() {
         <button
            onClick={handleToggleMapType}
            className={`bg-gray-800/90 backdrop-blur border p-3 rounded-full shadow-lg text-white transition group
-             ${mapType === 'satellite' ? 'border-blue-500' : 'border-gray-700 hover:bg-gray-700'}
+             ${mapType !== 'roadmap' ? 'border-blue-500' : 'border-gray-700 hover:bg-gray-700'}
            `}
-           title={`Switch to ${mapType === 'satellite' ? 'Road' : 'Satellite'} View`}
+           title={mapType === 'satellite' ? 'Switch to Road View' : mapType === 'roadmap' ? 'Switch to Dark Mode' : 'Switch to Satellite View'}
         >
            <Layers size={24} className="group-hover:text-blue-400 transition" />
         </button>
       </div>
+
+      {/* Slide-out Menu */}
+      {(isMenuOpen || isMenuClosing) && (
+        <>
+          {/* Backdrop */}
+          <div
+            className={`fixed inset-0 bg-black/50 z-[100] transition-opacity duration-300 ${isMenuAnimatingIn && !isMenuClosing ? 'opacity-100' : 'opacity-0'}`}
+            onClick={closeMenu}
+          />
+
+          {/* Menu Panel */}
+          <div
+            className={`fixed top-0 left-0 h-full w-72 bg-gray-900 border-r border-gray-700 z-[101] shadow-2xl transform transition-transform duration-300 ease-out ${isMenuAnimatingIn && !isMenuClosing ? 'translate-x-0' : '-translate-x-full'}`}
+          >
+            {/* Menu Header */}
+            <div className="p-5 border-b border-gray-700">
+              <div className="flex items-center gap-3">
+                <img src="/logo.svg" className="w-10 h-10 object-contain" alt="Logo" />
+                <div>
+                  <h2 className="text-white font-bold text-lg">GourmetMaps</h2>
+                  <p className="text-gray-500 text-xs">Map your culinary journey</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Menu Items */}
+            <div className="p-3">
+              <button
+                onClick={() => {
+                  closeMenu();
+                  setIsUserDetailOpen(true);
+                }}
+                className="w-full flex items-center gap-4 px-4 py-3.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200 group"
+              >
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="User" className="w-10 h-10 rounded-full border-2 border-gray-700 group-hover:border-gray-600 transition-colors duration-200" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gray-800 group-hover:bg-gray-700 flex items-center justify-center transition-colors duration-200">
+                    <UserIcon size={20} className="text-gray-400 group-hover:text-white transition-colors duration-200" />
+                  </div>
+                )}
+                <div className="text-left">
+                  <span className="font-medium block">{user?.displayName || 'User'}</span>
+                  <span className="text-xs text-gray-500">View your profile</span>
+                </div>
+              </button>
+            </div>
+
+            {/* Menu Footer - Close button */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
+              <button
+                onClick={closeMenu}
+                className="w-full flex items-center justify-center gap-2 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200"
+              >
+                <X size={18} />
+                <span className="text-sm font-medium">Close Menu</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* User Detail Modal */}
+      {(isUserDetailOpen || isUserDetailClosing) && user && (
+        <>
+          <div
+            className={`fixed inset-0 bg-black/60 z-[100] transition-opacity duration-200 ${isUserDetailClosing ? 'opacity-0' : 'opacity-100'}`}
+            onClick={closeUserDetail}
+          />
+          <div className={`fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none`}>
+            <div
+              className={`bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-sm pointer-events-auto transform transition-all duration-200 ${isUserDetailClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}
+            >
+              {/* Close button */}
+              <button
+                onClick={closeUserDetail}
+                className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              {/* User Profile Section */}
+              <div className="p-6 text-center">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="User" className="w-24 h-24 rounded-full mx-auto border-4 border-gray-700 shadow-lg" />
+                ) : (
+                  <div className="w-24 h-24 rounded-full mx-auto bg-gray-700 flex items-center justify-center border-4 border-gray-600">
+                    <UserIcon size={40} className="text-gray-400" />
+                  </div>
+                )}
+                <h2 className="text-xl font-bold text-white mt-4">{user.displayName || 'User'}</h2>
+                {user.email && (
+                  <p className="text-gray-400 text-sm mt-1">{user.email}</p>
+                )}
+                {userProfile?.role === 'admin' && (
+                  <span className="inline-block mt-2 px-3 py-1 bg-blue-500/20 text-blue-400 text-xs font-medium rounded-full">
+                    Admin
+                  </span>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="p-4 border-t border-gray-700 space-y-2">
+                <button
+                  onClick={() => {
+                    closeUserDetail();
+                    setViewState(ViewState.USER_HISTORY);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-colors"
+                >
+                  <Clock size={18} />
+                  <span className="font-medium">View History</span>
+                </button>
+                <button
+                  onClick={() => {
+                    closeUserDetail();
+                    handleLogout();
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl transition-colors"
+                >
+                  <LogOut size={18} />
+                  <span className="font-medium">Log Out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Modals */}
       {viewState === ViewState.ADD_ENTRY && (
