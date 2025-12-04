@@ -197,18 +197,21 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
           return {
             icon: <Lock size={18} className="text-blue-400" />,
             bgColor: 'bg-blue-500/20',
+            activeBg: 'bg-blue-600/20 border border-blue-500/50',
             label: 'Private'
           };
         case 'created':
           return {
             icon: <Users size={18} className="text-purple-400" />,
             bgColor: 'bg-purple-500/20',
+            activeBg: 'bg-purple-600/20 border border-purple-500/50',
             label: 'Shared (Owner)'
           };
         case 'joined':
           return {
             icon: <Globe size={18} className="text-green-400" />,
             bgColor: 'bg-green-500/20',
+            activeBg: 'bg-green-600/20 border border-green-500/50',
             label: 'Shared (Member)'
           };
       }
@@ -222,7 +225,7 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
         <div
           className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200
             ${isActive
-              ? 'bg-blue-600/20 border border-blue-500/50'
+              ? styles.activeBg
               : 'bg-gray-700/50 border border-transparent hover:bg-gray-700'}
           `}
         >
