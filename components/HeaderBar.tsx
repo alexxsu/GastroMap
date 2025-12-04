@@ -1,7 +1,8 @@
-import React from 'react';
-import { Menu, Search, Filter, X } from 'lucide-react';
-import { Restaurant } from '../types';
+import React, { useState } from 'react';
+import { Menu, Search, Filter, X, Bell } from 'lucide-react';
+import { Restaurant, AppNotification } from '../types';
 import { GRADES, getGradeColor } from '../utils/rating';
+import { NotificationPanel } from './NotificationPanel';
 
 interface HeaderBarProps {
   // Search props
@@ -25,6 +26,12 @@ interface HeaderBarProps {
   closeFilter: () => void;
   // Menu
   onMenuToggle: () => void;
+  // Notifications
+  notifications?: AppNotification[];
+  unreadCount?: number;
+  onMarkAsRead?: (id: string) => void;
+  onMarkAllAsRead?: () => void;
+  showNotifications?: boolean;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -45,9 +52,36 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onClearAllGrades,
   onFilterToggle,
   closeFilter,
-  onMenuToggle
+  onMenuToggle,
+  notifications = [],
+  unreadCount = 0,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  showNotifications = false
 }) => {
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isNotifClosing, setIsNotifClosing] = useState(false);
   const showSearchInput = isSearchFocused || searchQuery || isSearchClosing;
+
+  const handleNotifToggle = () => {
+    if (isNotifOpen) {
+      setIsNotifClosing(true);
+      setTimeout(() => {
+        setIsNotifOpen(false);
+        setIsNotifClosing(false);
+      }, 200);
+    } else {
+      setIsNotifOpen(true);
+    }
+  };
+
+  const closeNotifications = () => {
+    setIsNotifClosing(true);
+    setTimeout(() => {
+      setIsNotifOpen(false);
+      setIsNotifClosing(false);
+    }, 200);
+  };
 
   return (
     <div className="w-full bg-gray-800/90 backdrop-blur border border-gray-700 p-2 rounded-xl shadow-lg pointer-events-auto transition-all duration-200 focus-within:ring-2 focus-within:ring-blue-500">
@@ -97,9 +131,9 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           </div>
         )}
 
-        {/* Search and Filter Buttons */}
+        {/* Search, Filter, and Notification Buttons */}
         {!showSearchInput && (
-          <div className="flex items-center gap-1 animate-scale-in">
+          <div className="flex items-center gap-0.5 animate-scale-in relative">
             <button
               onClick={(e) => { e.stopPropagation(); setIsSearchFocused(true); }}
               className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white"
@@ -118,6 +152,34 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full" />
               )}
             </button>
+            {/* Notification Button */}
+            {showNotifications && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleNotifToggle(); }}
+                className={`p-1.5 hover:bg-gray-700 rounded-lg transition-colors duration-200 relative ${
+                  isNotifOpen ? 'text-blue-400' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] bg-red-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            )}
+            {/* Notification Panel */}
+            {showNotifications && onMarkAsRead && onMarkAllAsRead && (
+              <NotificationPanel
+                notifications={notifications}
+                unreadCount={unreadCount}
+                isOpen={isNotifOpen}
+                isClosing={isNotifClosing}
+                onClose={closeNotifications}
+                onMarkAsRead={onMarkAsRead}
+                onMarkAllAsRead={onMarkAllAsRead}
+              />
+            )}
           </div>
         )}
       </div>

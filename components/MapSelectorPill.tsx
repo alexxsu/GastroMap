@@ -19,6 +19,22 @@ interface MapSelectorPillProps {
   filteredCount: number;
 }
 
+// Helper to get owner display name with fallbacks
+const getOwnerDisplayName = (map: UserMap): string => {
+  // First try displayName if it's valid (not Anonymous/Unknown)
+  if (map.ownerDisplayName &&
+      map.ownerDisplayName !== 'Anonymous' &&
+      map.ownerDisplayName !== 'Unknown') {
+    return map.ownerDisplayName;
+  }
+  // Then try email
+  if (map.ownerEmail) {
+    return map.ownerEmail;
+  }
+  // Fallback to just showing the map name (no owner prefix)
+  return map.name;
+};
+
 export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
   activeMap,
   user,
@@ -88,7 +104,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
             ) : activeMap.ownerUid === user?.uid ? (
               <span className="text-purple-400">Shared Map (Owner)</span>
             ) : (
-              <span className="text-green-400">Shared Map by {(activeMap.ownerDisplayName && activeMap.ownerDisplayName !== 'Anonymous' && activeMap.ownerDisplayName !== 'Unknown') ? activeMap.ownerDisplayName : activeMap.ownerUid}</span>
+              <span className="text-green-400">Shared Map by {getOwnerDisplayName(activeMap)}</span>
             )}
           </div>
 
@@ -130,16 +146,11 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                 {/* Joined Shared Maps Section */}
                 {userJoinedMaps.length > 0 && (
                   <optgroup label="Shared Maps (Joined)">
-                    {userJoinedMaps.map((m) => {
-                      const ownerName = (m.ownerDisplayName && m.ownerDisplayName !== 'Anonymous' && m.ownerDisplayName !== 'Unknown')
-                        ? m.ownerDisplayName
-                        : m.ownerUid;
-                      return (
-                        <option key={m.id} value={m.id}>
-                          🌐 {m.name} ({ownerName})
-                        </option>
-                      );
-                    })}
+                    {userJoinedMaps.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        🌐 {m.name} ({getOwnerDisplayName(m)})
+                      </option>
+                    ))}
                   </optgroup>
                 )}
               </select>
@@ -158,16 +169,11 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                   if (selected) onSelectMap(selected);
                 }}
               >
-                {allMaps.map((m) => {
-                  const displayName = (m.ownerDisplayName && m.ownerDisplayName !== 'Anonymous' && m.ownerDisplayName !== 'Unknown')
-                    ? m.ownerDisplayName
-                    : m.ownerUid;
-                  return (
-                    <option key={m.id} value={m.id}>
-                      {displayName + ' – ' + m.name}
-                    </option>
-                  );
-                })}
+                {allMaps.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {getOwnerDisplayName(m) + ' – ' + m.name}
+                  </option>
+                ))}
               </select>
             </div>
           )}

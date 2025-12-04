@@ -207,6 +207,7 @@ export interface UserMap {
   id: string;
   ownerUid: string;
   ownerDisplayName?: string;
+  ownerEmail?: string; // Owner's email for fallback display
   name: string; // e.g. "Default Map"
   visibility: 'private' | 'public' | 'shared';
   isDefault: boolean;
@@ -215,6 +216,30 @@ export interface UserMap {
   shareCode?: string; // 4-digit unique code for shared maps
   members?: string[]; // Array of user UIDs who have access to this shared map
   memberInfo?: MapMember[]; // Detailed member information
+}
+
+// Notification system
+export type NotificationType =
+  | 'member_joined'      // Someone joined a shared map you're in
+  | 'member_left'        // Someone left a shared map you're in
+  | 'member_removed'     // You were removed from a shared map
+  | 'join_approved'      // Your account was approved
+  | 'post_added'         // Someone added a post to your shared map
+  | 'post_deleted'       // Someone deleted a post from your shared map
+  | 'map_invite'         // You were invited to a map (future feature)
+  | 'system';            // System announcements
+
+export interface AppNotification {
+  id: string;
+  recipientUid: string;
+  type: NotificationType;
+  mapId?: string;
+  mapName?: string;
+  actorUid?: string;
+  actorName?: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
 }
 
 export enum ViewState {

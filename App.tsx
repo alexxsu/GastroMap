@@ -9,7 +9,8 @@ import {
   useRestaurants,
   useSearch,
   useFilter,
-  useMapControls
+  useMapControls,
+  useNotifications
 } from './hooks';
 
 // Components
@@ -66,6 +67,16 @@ function App() {
     leaveSharedMap,
     kickMember
   } = useMaps(user, userProfile);
+
+  // Notifications hook
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    createNotification,
+    notifyMapMembers
+  } = useNotifications(user);
 
   // Restaurants hook
   const {
@@ -377,6 +388,11 @@ function App() {
               onFilterToggle={handleFilterToggle}
               closeFilter={closeFilter}
               onMenuToggle={handleMenuToggle}
+              notifications={notifications}
+              unreadCount={unreadCount}
+              onMarkAsRead={markAsRead}
+              onMarkAllAsRead={markAllAsRead}
+              showNotifications={!user?.isAnonymous}
             />
 
             {/* Map Selector Pill */}
