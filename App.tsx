@@ -1527,27 +1527,23 @@ function App() {
                   <span className="text-xs text-gray-500">How TraceBook works</span>
                 </div>
               </button>
+            </div>
 
-              {/* Logout */}
+            {/* Menu Footer - Logout and Close */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700 space-y-2">
+              {/* Logout Button */}
               <button
                 onClick={() => {
                   closeMenu();
                   handleLogout();
                 }}
-                className="w-full flex items-center gap-4 px-4 py-3.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200 group"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 rounded-xl transition-all duration-200 border border-red-500/30"
               >
-                <div className="w-10 h-10 rounded-full bg-gray-800 group-hover:bg-red-900/50 flex items-center justify-center transition-colors duration-200">
-                  <LogOut size={20} className="text-gray-400 group-hover:text-red-400 transition-colors duration-200" />
-                </div>
-                <div className="text-left">
-                  <span className="font-medium block">Log Out</span>
-                  <span className="text-xs text-gray-500">Sign out of your account</span>
-                </div>
+                <LogOut size={18} />
+                <span className="font-medium">Log Out</span>
               </button>
-            </div>
-
-            {/* Menu Footer - Close button */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
+              
+              {/* Close Menu Button */}
               <button
                 onClick={closeMenu}
                 className="w-full flex items-center justify-center gap-2 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200"

@@ -194,6 +194,14 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
     const getTypeStyles = () => {
       switch (type) {
         case 'default':
+          // Guest users see "Public" instead of "Private"
+          if (isGuest) {
+            return {
+              icon: <Globe size={18} className={isActive ? 'text-green-400' : 'text-blue-400'} />,
+              bgColor: isActive ? 'bg-green-500/20 ring-2 ring-green-500/50' : 'bg-blue-500/20',
+              label: 'Public'
+            };
+          }
           return {
             icon: <Lock size={18} className={isActive ? 'text-green-400' : 'text-blue-400'} />,
             bgColor: isActive ? 'bg-green-500/20 ring-2 ring-green-500/50' : 'bg-blue-500/20',
@@ -241,26 +249,19 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
               <div className="flex items-center gap-2">
                 <span className="text-white font-medium truncate">{map.name}</span>
                 {map.isDefault && (
-                  <span className="text-[10px] bg-blue-500/30 text-blue-300 px-1.5 py-0.5 rounded">Default</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                    isGuest 
+                      ? 'bg-blue-500/30 text-blue-300' 
+                      : 'bg-blue-500/30 text-blue-300'
+                  }`}>
+                    {isGuest ? 'Demo' : 'Default'}
+                  </span>
                 )}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-xs text-gray-400">{styles.label}</span>
                 {map.shareCode && type === 'created' && (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopyCode(map.shareCode!);
-                    }}
-                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition cursor-pointer"
-                  >
-                    <span className="font-mono bg-gray-600 px-1.5 py-0.5 rounded">{map.shareCode}</span>
-                    {copiedCode === map.shareCode ? (
-                      <Check size={12} className="text-green-400" />
-                    ) : (
-                      <Copy size={12} />
-                    )}
-                  </span>
+                  <span className="font-mono text-xs bg-gray-600 text-gray-300 px-1.5 py-0.5 rounded">{map.shareCode}</span>
                 )}
                 {type === 'joined' && map.ownerDisplayName && (
                   <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -271,6 +272,24 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
               </div>
             </div>
           </button>
+
+          {/* Copy code button - for created maps, left of gear */}
+          {type === 'created' && map.shareCode && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCopyCode(map.shareCode!);
+              }}
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                copiedCode === map.shareCode
+                  ? 'bg-green-600/30 text-green-400'
+                  : 'bg-gray-600/50 text-gray-400 hover:text-white hover:bg-gray-600'
+              }`}
+              title="Copy share code"
+            >
+              {copiedCode === map.shareCode ? <Check size={16} /> : <Copy size={16} />}
+            </button>
+          )}
 
           {/* Settings gear inside the box for created and joined maps */}
           {(type === 'created' || type === 'joined') && (
@@ -478,7 +497,7 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
             <div>
               <h2 className="text-lg font-bold text-white">Map Management</h2>
               <p className="text-xs text-gray-400 mt-0.5">
-                {isGuest ? 'View your demo map' : 'Manage your maps and collaborations'}
+                {isGuest ? 'Viewing public demo map' : 'Manage your maps and collaborations'}
               </p>
             </div>
             <button
@@ -495,8 +514,8 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
             {/* Section 1: Default Map */}
             <div>
               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                <Lock size={12} />
-                {isGuest ? 'Demo Map' : 'Your Default Map'}
+                {isGuest ? <Globe size={12} /> : <Lock size={12} />}
+                {isGuest ? 'Public Demo Map' : 'Your Default Map'}
               </h3>
               <div className="space-y-2">
                 {userMaps.length > 0 ? (
@@ -665,10 +684,18 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
 
             {/* Guest info message */}
             {isGuest && (
-              <div className="bg-gray-700/30 rounded-xl p-4 border border-gray-600">
-                <p className="text-gray-400 text-sm text-center">
-                  Sign in to create or join shared maps with others.
-                </p>
+              <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/30">
+                <div className="flex items-start gap-3">
+                  <Globe size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-blue-300 text-sm font-medium mb-1">
+                      You're viewing a public demo map
+                    </p>
+                    <p className="text-gray-400 text-xs">
+                      All entries are visible to everyone. Sign in to create your own private map or join shared maps with others.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
