@@ -90,9 +90,52 @@ const MapContainer: React.FC<MapContainerProps> = ({ apiKey, restaurants, onMark
         gestureHandling: 'greedy', 
       });
 
-      // Initialize MarkerClusterer with robust click handler
-      clustererRef.current = new MarkerClusterer({ 
+      // Custom cluster renderer with logical color gradient
+      const renderer = {
+        render: ({ count, position }: { count: number; position: google.maps.LatLng }) => {
+          // Logical color gradient: amber → orange → red (heat map style)
+          let backgroundColor: string;
+          let textColor = 'white';
+
+          if (count < 10) {
+            // Small clusters: Light amber (matches single markers)
+            backgroundColor = '#F59E0B'; // amber-500
+          } else if (count < 30) {
+            // Medium clusters: Orange
+            backgroundColor = '#EA580C'; // orange-600
+          } else if (count < 100) {
+            // Large clusters: Deep orange
+            backgroundColor = '#DC2626'; // red-600
+          } else {
+            // Very large clusters: Dark red
+            backgroundColor = '#991B1B'; // red-800
+          }
+
+          // Create cluster marker element
+          const svg = `
+            <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="25" cy="25" r="22" fill="${backgroundColor}" stroke="white" stroke-width="3" opacity="0.9"/>
+              <text x="25" y="25" font-size="14" font-weight="bold" fill="${textColor}" text-anchor="middle" dominant-baseline="central">${count}</text>
+            </svg>
+          `;
+
+          const icon = document.createElement('div');
+          icon.innerHTML = svg;
+          icon.style.width = '50px';
+          icon.style.height = '50px';
+
+          return new google.maps.marker.AdvancedMarkerElement({
+            position,
+            content: icon,
+            zIndex: Number(google.maps.Marker.MAX_ZINDEX) + count,
+          });
+        }
+      };
+
+      // Initialize MarkerClusterer with custom renderer and click handler
+      clustererRef.current = new MarkerClusterer({
         map,
+        renderer,
         onClusterClick: (event, cluster, map) => {
           // Explicit fitBounds ensures consistent zoom animation
           const bounds = new google.maps.LatLngBounds();
@@ -103,7 +146,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ apiKey, restaurants, onMark
               }
             });
             // Padding ensures markers aren't right on the edge
-            map.fitBounds(bounds, 50); 
+            map.fitBounds(bounds, 50);
           }
         }
       });
