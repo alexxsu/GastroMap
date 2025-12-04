@@ -95,8 +95,17 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
         });
       }, 10);
     }
-    // Swipe down to close
-    else if (dragY > 150) {
+    // Swipe down from expanded (100%) - collapse to 80% first
+    else if (isExpanded && dragY > 150) {
+      setDragY(0);
+      setIsExpanded(false);
+      // Clean up isExpanding after collapse animation
+      setTimeout(() => {
+        setIsExpanding(false);
+      }, 450);
+    }
+    // Swipe down from partial (80%) - close completely
+    else if (!isExpanded && dragY > 150) {
       setTimeout(() => handleClose('down'), 100);
     }
     // Snap back if threshold not met
