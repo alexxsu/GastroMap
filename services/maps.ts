@@ -5,6 +5,7 @@ import { UserMap } from '../types';
 interface SimpleUser {
   uid: string;
   displayName?: string | null;
+  email?: string | null;
 }
 
 /**
@@ -36,7 +37,7 @@ export async function ensureDefaultMapForUser(user: SimpleUser): Promise<UserMap
     };
   }
 
-  const ownerDisplayName = user.displayName ?? 'Anonymous';
+  const ownerDisplayName = user.displayName || user.email || user.uid;
 
   const result = await addDoc(mapsRef, {
     ownerUid: user.uid,

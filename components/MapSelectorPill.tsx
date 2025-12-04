@@ -88,7 +88,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
             ) : activeMap.ownerUid === user?.uid ? (
               <span className="text-purple-400">Shared Map (Owner)</span>
             ) : (
-              <span className="text-green-400">Shared Map by {activeMap.ownerDisplayName}</span>
+              <span className="text-green-400">Shared Map by {(activeMap.ownerDisplayName && activeMap.ownerDisplayName !== 'Anonymous' && activeMap.ownerDisplayName !== 'Unknown') ? activeMap.ownerDisplayName : activeMap.ownerUid}</span>
             )}
           </div>
 
@@ -130,11 +130,16 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                 {/* Joined Shared Maps Section */}
                 {userJoinedMaps.length > 0 && (
                   <optgroup label="Shared Maps (Joined)">
-                    {userJoinedMaps.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        🌐 {m.name} ({m.ownerDisplayName})
-                      </option>
-                    ))}
+                    {userJoinedMaps.map((m) => {
+                      const ownerName = (m.ownerDisplayName && m.ownerDisplayName !== 'Anonymous' && m.ownerDisplayName !== 'Unknown')
+                        ? m.ownerDisplayName
+                        : m.ownerUid;
+                      return (
+                        <option key={m.id} value={m.id}>
+                          🌐 {m.name} ({ownerName})
+                        </option>
+                      );
+                    })}
                   </optgroup>
                 )}
               </select>
@@ -153,11 +158,16 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                   if (selected) onSelectMap(selected);
                 }}
               >
-                {allMaps.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {(m.ownerDisplayName || m.ownerUid) + ' – ' + m.name}
-                  </option>
-                ))}
+                {allMaps.map((m) => {
+                  const displayName = (m.ownerDisplayName && m.ownerDisplayName !== 'Anonymous' && m.ownerDisplayName !== 'Unknown')
+                    ? m.ownerDisplayName
+                    : m.ownerUid;
+                  return (
+                    <option key={m.id} value={m.id}>
+                      {displayName + ' – ' + m.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           )}
