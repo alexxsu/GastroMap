@@ -46,7 +46,8 @@ function App() {
     resendVerificationEmail,
     loginAsGuest,
     logout,
-    refreshStatus
+    refreshStatus,
+    updateUserProfile
   } = useAuth();
 
   // View state
@@ -454,6 +455,7 @@ function App() {
           onClose={closeUserDetail}
           onViewHistory={() => setViewState(ViewState.USER_HISTORY)}
           onLogout={handleLogout}
+          onUpdateProfile={updateUserProfile}
         />
       )}
 

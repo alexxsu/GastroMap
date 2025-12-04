@@ -195,20 +195,20 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
       switch (type) {
         case 'default':
           return {
-            icon: <Lock size={18} className={isActive ? 'text-green-400' : 'text-blue-400'} />,
-            bgColor: isActive ? 'bg-green-500/20 ring-2 ring-green-500/50' : 'bg-blue-500/20',
+            icon: <Lock size={18} className="text-blue-400" />,
+            bgColor: 'bg-blue-500/20',
             label: 'Private'
           };
         case 'created':
           return {
-            icon: <Users size={18} className={isActive ? 'text-green-400' : 'text-purple-400'} />,
-            bgColor: isActive ? 'bg-green-500/20 ring-2 ring-green-500/50' : 'bg-purple-500/20',
+            icon: <Users size={18} className="text-purple-400" />,
+            bgColor: 'bg-purple-500/20',
             label: 'Shared (Owner)'
           };
         case 'joined':
           return {
-            icon: <Globe size={18} className={isActive ? 'text-green-400' : 'text-green-400'} />,
-            bgColor: isActive ? 'bg-green-500/20 ring-2 ring-green-500/50' : 'bg-green-500/20',
+            icon: <Globe size={18} className="text-green-400" />,
+            bgColor: 'bg-green-500/20',
             label: 'Shared (Member)'
           };
       }

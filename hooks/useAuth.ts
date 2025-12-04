@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, signOut, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { auth, googleProvider, db } from '../firebaseConfig';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth, googleProvider, db, storage } from '../firebaseConfig';
 import { UserProfile, UserMap, ViewState } from '../types';
 
 export interface AppUser {
@@ -24,6 +25,7 @@ interface UseAuthReturn {
   loginAsGuest: () => Promise<UserMap>;
   logout: () => Promise<void>;
   refreshStatus: () => Promise<{ emailVerified: boolean; approved: boolean }>;
+  updateUserProfile: (displayName?: string, photoFile?: File) => Promise<void>;
 }
 
 export function useAuth(): UseAuthReturn {
@@ -279,6 +281,51 @@ export function useAuth(): UseAuthReturn {
     }
   };
 
+  const updateUserProfile = async (displayName?: string, photoFile?: File): Promise<void> => {
+    const currentUser = auth.currentUser;
+    if (!currentUser || currentUser.isAnonymous) {
+      throw new Error("No authenticated user");
+    }
+
+    let photoURL = user?.photoURL || null;
+
+    // Upload photo if provided
+    if (photoFile) {
+      const storageRef = ref(storage, `profile-photos/${currentUser.uid}`);
+      await uploadBytes(storageRef, photoFile);
+      photoURL = await getDownloadURL(storageRef);
+    }
+
+    // Update Firebase Auth profile
+    await updateProfile(currentUser, {
+      displayName: displayName || currentUser.displayName,
+      photoURL: photoURL
+    });
+
+    // Update Firestore profile
+    const userRef = doc(db, "users", currentUser.uid);
+    const updates: Partial<UserProfile> = {};
+    if (displayName) updates.displayName = displayName;
+    if (photoURL) updates.photoURL = photoURL;
+
+    if (Object.keys(updates).length > 0) {
+      await updateDoc(userRef, updates);
+    }
+
+    // Update local state
+    setUser(prev => prev ? {
+      ...prev,
+      displayName: displayName || prev.displayName,
+      photoURL: photoURL
+    } : prev);
+
+    setUserProfile(prev => prev ? {
+      ...prev,
+      displayName: displayName || prev.displayName,
+      photoURL: photoURL
+    } : prev);
+  };
+
   return {
     user,
     userProfile,
@@ -289,6 +336,7 @@ export function useAuth(): UseAuthReturn {
     resendVerificationEmail,
     loginAsGuest,
     logout,
-    refreshStatus
+    refreshStatus,
+    updateUserProfile
   };
 }
