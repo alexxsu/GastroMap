@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Loader2, Camera, Trash2, Save } from 'lucide-react';
 import { Visit, Restaurant } from '../types';
 import { GRADES } from '../utils/rating';
