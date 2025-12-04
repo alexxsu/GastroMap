@@ -38,12 +38,12 @@ export const getGradeColor = (grade: string): string => {
 
 export const getGradeDescription = (grade: string): string => {
   switch (grade) {
-    case 'S': return 'God Tier';
-    case 'A': return 'Excellent, value exceeds price';
-    case 'B': return 'Good, value matches price';
-    case 'C': return 'Bad, value mismatch';
-    case 'D': return 'Terrible, need to avoid';
-    case 'E': return 'Hell, recommend to someone you hate';
+    case 'S': return 'God';
+    case 'A': return 'Excellent';
+    case 'B': return 'Good';
+    case 'C': return 'OK';
+    case 'D': return 'Terrible';
+    case 'E': return 'Nightmare';
     default: return '';
   }
 };

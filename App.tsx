@@ -1060,12 +1060,26 @@ function App() {
 
                 {/* Search Icon Button - only when not searching */}
                 {!isSearchFocused && !searchQuery && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setIsSearchFocused(true); }}
-                    className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white ml-auto"
-                  >
-                    <Search size={18} />
-                  </button>
+                  <>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setIsSearchFocused(true); }}
+                      className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white ml-auto"
+                    >
+                      <Search size={18} />
+                    </button>
+                    {/* Filter Button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setIsFilterOpen(prev => !prev); }}
+                      className={`p-1.5 hover:bg-gray-700 rounded-lg transition-colors duration-200 relative ${
+                        selectedGrades.length < GRADES.length ? 'text-blue-400' : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      <Filter size={18} />
+                      {selectedGrades.length < GRADES.length && (
+                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full" />
+                      )}
+                    </button>
+                  </>
                 )}
               </div>
 
@@ -1093,7 +1107,7 @@ function App() {
             {activeMap && (
               <button
                 onClick={() => setIsCompactCardOpen(prev => !prev)}
-                className={`flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full backdrop-blur border shadow-lg transition-all duration-200 text-sm font-medium pointer-events-auto self-start
+                className={`flex items-center gap-2.5 pl-2 pr-4 py-1.5 mt-1 rounded-full backdrop-blur border shadow-lg transition-all duration-200 text-sm font-medium pointer-events-auto self-start
                   ${isCompactCardOpen
                     ? 'bg-blue-600/90 border-blue-400/50 text-white'
                     : activeMap.isDefault 
@@ -1104,13 +1118,13 @@ function App() {
                 `}
               >
                 {activeMap.isDefault ? (
-                  <Lock size={14} className={isCompactCardOpen ? 'text-white' : 'text-blue-400'} />
+                  <Lock size={16} className={isCompactCardOpen ? 'text-white' : 'text-blue-400'} />
                 ) : activeMap.ownerUid === user?.uid ? (
-                  <Users size={14} className={isCompactCardOpen ? 'text-white' : 'text-purple-400'} />
+                  <Users size={16} className={isCompactCardOpen ? 'text-white' : 'text-purple-400'} />
                 ) : (
-                  <Globe size={14} className={isCompactCardOpen ? 'text-white' : 'text-green-400'} />
+                  <Globe size={16} className={isCompactCardOpen ? 'text-white' : 'text-green-400'} />
                 )}
-                <span className="truncate max-w-[120px]">{activeMap.name}</span>
+                <span className="truncate max-w-[160px]">{activeMap.name}</span>
               </button>
             )}
 
@@ -1324,23 +1338,6 @@ function App() {
              </>
            )}
         </div>
-
-        <button 
-          onClick={() => setViewState(ViewState.STATS)}
-          className="bg-gray-800/90 backdrop-blur border border-gray-700 p-3 rounded-full shadow-lg text-white hover:bg-gray-700 transition group w-12 h-12 flex items-center justify-center"
-          title="Rankings"
-        >
-          <BarChart2 size={24} className="group-hover:text-blue-400 transition" />
-        </button>
-
-        <button 
-            onClick={() => setViewState(ViewState.INFO)}
-            className="bg-gray-800/90 backdrop-blur border border-gray-700 p-3 rounded-full shadow-lg text-white hover:bg-gray-700 transition group w-12 h-12 flex items-center justify-center"
-            title="Info"
-          >
-            <Info size={24} className="group-hover:text-blue-400 transition" />
-        </button>
-
       </div>
 
       {/* Bottom Right Custom Map Controls */}
@@ -1451,7 +1448,7 @@ function App() {
                 </div>
               </button>
 
-              {/* Info */}
+              {/* About */}
               <button
                 onClick={() => {
                   closeMenu();
@@ -1465,6 +1462,23 @@ function App() {
                 <div className="text-left">
                   <span className="font-medium block">About</span>
                   <span className="text-xs text-gray-500">How TraceBook works</span>
+                </div>
+              </button>
+
+              {/* Logout */}
+              <button
+                onClick={() => {
+                  closeMenu();
+                  handleLogout();
+                }}
+                className="w-full flex items-center gap-4 px-4 py-3.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200 group"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-800 group-hover:bg-red-900/50 flex items-center justify-center transition-colors duration-200">
+                  <LogOut size={20} className="text-gray-400 group-hover:text-red-400 transition-colors duration-200" />
+                </div>
+                <div className="text-left">
+                  <span className="font-medium block">Log Out</span>
+                  <span className="text-xs text-gray-500">Sign out of your account</span>
                 </div>
               </button>
             </div>

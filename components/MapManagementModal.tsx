@@ -44,6 +44,7 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
   const [joinError, setJoinError] = useState<string | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [settingsOpenFor, setSettingsOpenFor] = useState<string | null>(null);
+  const [settingsClosing, setSettingsClosing] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState<string | null>(null);
   const [confirmKick, setConfirmKick] = useState<{ mapId: string; memberUid: string } | null>(null);
 
@@ -51,6 +52,31 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
   const totalSharedMapsCount = sharedMaps.length + joinedMaps.length;
   const canCreateMore = !isGuest && userSharedMapsCount < maxSharedMaps;
   const canJoinMore = !isGuest && totalSharedMapsCount < maxSharedMaps;
+
+  // Toggle settings with animation
+  const toggleSettings = (mapId: string) => {
+    if (settingsOpenFor === mapId) {
+      // Close with animation
+      setSettingsClosing(true);
+      setTimeout(() => {
+        setSettingsOpenFor(null);
+        setSettingsClosing(false);
+        setConfirmLeave(null);
+        setConfirmKick(null);
+      }, 200);
+    } else {
+      // Open (close any existing first)
+      if (settingsOpenFor) {
+        setSettingsClosing(true);
+        setTimeout(() => {
+          setSettingsClosing(false);
+          setSettingsOpenFor(mapId);
+        }, 200);
+      } else {
+        setSettingsOpenFor(mapId);
+      }
+    }
+  };
 
   // Animation helpers
   const openCreateForm = () => {
@@ -190,17 +216,21 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
 
     return (
       <div key={map.id} className="space-y-2">
-        <div className="flex items-center gap-2">
+        {/* Map item box - contains everything including gear */}
+        <div
+          className={`flex items-center gap-3 p-3 rounded-xl transition
+            ${isActive
+              ? 'bg-blue-600/20 border border-blue-500/50'
+              : 'bg-gray-700/50 border border-transparent hover:bg-gray-700'}
+          `}
+        >
+          {/* Clickable area for selecting map */}
           <button
             onClick={() => {
               onSelectMap(map);
               handleClose();
             }}
-            className={`flex-1 flex items-center gap-3 p-3 rounded-xl transition text-left
-              ${isActive
-                ? 'bg-blue-600/20 border border-blue-500/50'
-                : 'bg-gray-700/50 border border-transparent hover:bg-gray-700'}
-            `}
+            className="flex-1 flex items-center gap-3 text-left"
           >
             <div className={`p-2 rounded-lg ${styles.bgColor}`}>
               {styles.icon}
@@ -215,12 +245,12 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-xs text-gray-400">{styles.label}</span>
                 {map.shareCode && type === 'created' && (
-                  <button
+                  <span
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCopyCode(map.shareCode!);
                     }}
-                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition"
+                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition cursor-pointer"
                   >
                     <span className="font-mono bg-gray-600 px-1.5 py-0.5 rounded">{map.shareCode}</span>
                     {copiedCode === map.shareCode ? (
@@ -228,7 +258,7 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
                     ) : (
                       <Copy size={12} />
                     )}
-                  </button>
+                  </span>
                 )}
                 {type === 'joined' && map.ownerDisplayName && (
                   <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -243,24 +273,31 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
             )}
           </button>
 
-          {/* Settings gear for created and joined maps */}
+          {/* Settings gear inside the box for created and joined maps */}
           {(type === 'created' || type === 'joined') && (
             <button
-              onClick={() => setSettingsOpenFor(isSettingsOpen ? null : map.id)}
-              className={`p-2 rounded-lg transition ${
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleSettings(map.id);
+              }}
+              className={`p-2 rounded-lg transition-all duration-200 ${
                 isSettingsOpen 
-                  ? 'bg-gray-600 text-white' 
-                  : 'bg-gray-700/50 text-gray-400 hover:text-white hover:bg-gray-700'
+                  ? 'bg-gray-600 text-white rotate-90' 
+                  : 'bg-gray-600/50 text-gray-400 hover:text-white hover:bg-gray-600'
               }`}
             >
-              <Settings size={18} />
+              <Settings size={16} />
             </button>
           )}
         </div>
 
-        {/* Settings Panel */}
+        {/* Settings Panel with animation */}
         {isSettingsOpen && (
-          <div className="ml-2 bg-gray-800 rounded-xl border border-gray-600 overflow-hidden animate-scale-in">
+          <div className={`ml-2 bg-gray-800 rounded-xl border border-gray-600 overflow-hidden transition-all duration-200 ${
+            settingsClosing 
+              ? 'opacity-0 scale-95 max-h-0' 
+              : 'opacity-100 scale-100 max-h-80 animate-scale-in'
+          }`}>
             {type === 'created' ? (
               // Created map settings - show members list
               <div className="p-3">
