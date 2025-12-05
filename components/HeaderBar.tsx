@@ -1,21 +1,27 @@
-import React, { useState } from 'react';
-import { Menu, Search, Filter, X, Bell } from 'lucide-react';
-import { Restaurant, AppNotification } from '../types';
-import { GRADES, getGradeColor } from '../utils/rating';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Menu, Search, Filter, ChevronUp, ChevronDown, ChevronRight, Bell, MapPin, Map } from 'lucide-react';
+import { Restaurant, AppNotification, UserMap } from '../types';
+import { GRADES, getGradeColor, getBestGrade } from '../utils/rating';
 import { NotificationPanel } from './NotificationPanel';
 import { useLanguage } from '../hooks/useLanguage';
 
+// Restaurant with map info for the search list
+export interface RestaurantWithMap extends Restaurant {
+  mapId: string;
+  mapName: string;
+}
+
 interface HeaderBarProps {
-  // Search props
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  searchResults: Restaurant[];
-  isSearchFocused: boolean;
-  setIsSearchFocused: (focused: boolean) => void;
+  // All restaurants across all maps for the pin list
+  allRestaurantsWithMaps: RestaurantWithMap[];
+  // Current map's restaurants (for filtering display)
+  currentMapRestaurants: Restaurant[];
+  // Search/List state
+  isSearchOpen: boolean;
+  setIsSearchOpen: (open: boolean) => void;
   isSearchClosing: boolean;
-  searchInputRef: React.RefObject<HTMLInputElement>;
   closeSearch: () => void;
-  onSearchSelect: (restaurant: Restaurant) => void;
+  onSelectPin: (restaurant: RestaurantWithMap) => void;
   // Filter props
   selectedGrades: string[];
   isFilterOpen: boolean;
@@ -33,18 +39,18 @@ interface HeaderBarProps {
   onMarkAsRead?: (id: string) => void;
   onMarkAllAsRead?: () => void;
   showNotifications?: boolean;
+  // Active map info
+  activeMapId?: string;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
-  searchQuery,
-  setSearchQuery,
-  searchResults,
-  isSearchFocused,
-  setIsSearchFocused,
+  allRestaurantsWithMaps,
+  currentMapRestaurants,
+  isSearchOpen,
+  setIsSearchOpen,
   isSearchClosing,
-  searchInputRef,
   closeSearch,
-  onSearchSelect,
+  onSelectPin,
   selectedGrades,
   isFilterOpen,
   isFilterClosing,
@@ -58,12 +64,47 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   unreadCount = 0,
   onMarkAsRead,
   onMarkAllAsRead,
-  showNotifications = false
+  showNotifications = false,
+  activeMapId
 }) => {
   const { t, language } = useLanguage();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isNotifClosing, setIsNotifClosing] = useState(false);
-  const showSearchInput = isSearchFocused || searchQuery || isSearchClosing;
+  const [expandedMaps, setExpandedMaps] = useState<Set<string>>(new Set());
+  const headerBarRef = useRef<HTMLDivElement>(null);
+
+  // Toggle map group expansion
+  const toggleMapExpansion = (mapId: string) => {
+    setExpandedMaps(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(mapId)) {
+        newSet.delete(mapId);
+      } else {
+        newSet.add(mapId);
+      }
+      return newSet;
+    });
+  };
+
+  // Handle click outside to close search
+  useEffect(() => {
+    if (!isSearchOpen) return;
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (headerBarRef.current && !headerBarRef.current.contains(event.target as Node)) {
+        closeSearch();
+      }
+    };
+
+    // Add listeners
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isSearchOpen, closeSearch]);
 
   const handleNotifToggle = () => {
     if (isNotifOpen) {
@@ -85,8 +126,43 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     }, 300);
   };
 
+  const handleSearchToggle = () => {
+    if (isSearchOpen) {
+      closeSearch();
+    } else {
+      setIsSearchOpen(true);
+    }
+  };
+
+  // Group restaurants by map, then sort alphabetically within each group
+  const groupedByMap = useMemo(() => {
+    const groups: { [mapId: string]: { mapName: string; restaurants: RestaurantWithMap[] } } = {};
+    
+    allRestaurantsWithMaps.forEach(r => {
+      if (!groups[r.mapId]) {
+        groups[r.mapId] = { mapName: r.mapName, restaurants: [] };
+      }
+      groups[r.mapId].restaurants.push(r);
+    });
+    
+    // Sort restaurants alphabetically within each group
+    Object.values(groups).forEach(group => {
+      group.restaurants.sort((a, b) => a.name.localeCompare(b.name));
+    });
+    
+    // Sort groups: current map first, then alphabetically by map name
+    const entries = Object.entries(groups);
+    entries.sort(([idA, groupA], [idB, groupB]) => {
+      if (idA === activeMapId) return -1;
+      if (idB === activeMapId) return 1;
+      return groupA.mapName.localeCompare(groupB.mapName);
+    });
+    
+    return entries;
+  }, [allRestaurantsWithMaps, activeMapId]);
+
   return (
-    <div data-component="header-bar" className="w-full bg-gray-800/90 backdrop-blur border border-gray-700 p-2 rounded-xl shadow-lg pointer-events-auto transition-all duration-200 focus-within:ring-2 focus-within:ring-blue-500">
+    <div ref={headerBarRef} data-component="header-bar" className="w-full bg-gray-800/90 backdrop-blur border border-gray-700 p-2 rounded-xl shadow-lg pointer-events-auto transition-all duration-200">
       <div className="flex items-center gap-2 relative min-h-[40px]">
         {/* Hamburger Menu Button */}
         <button
@@ -97,49 +173,44 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           <Menu size={20} />
         </button>
 
-        {/* Logo/Title - clickable to trigger search */}
-        {!showSearchInput && (
-          <div
+        {/* Logo/Title - clickable to open pin list */}
+        {!isSearchOpen && !isSearchClosing && (
+          <button
             data-tutorial="search-bar"
-            onClick={() => setIsSearchFocused(true)}
-            className="flex-1 flex items-center gap-2 px-1 text-white cursor-pointer hover:opacity-80 transition-opacity duration-200 animate-scale-in"
+            onClick={handleSearchToggle}
+            className="flex-1 flex items-center gap-2 px-1 text-white cursor-pointer hover:opacity-80 transition-opacity duration-200 animate-scale-in select-none"
           >
-            <img src="/logo.svg" className="w-7 h-7 object-contain" alt="Logo" />
+            <img src="/logo.svg" className="w-7 h-7 object-contain pointer-events-none" alt="Logo" />
             <span className="font-bold truncate">TraceBook</span>
-          </div>
+          </button>
         )}
 
-        {/* Search Input - appears when search is active */}
-        {showSearchInput && (
-          <div data-tutorial="search" className={`flex-1 flex items-center bg-gray-700/50 rounded-lg px-2 h-[36px] ${isSearchClosing ? 'animate-scale-out' : 'animate-scale-in'}`}>
-            <Search size={14} className="text-gray-400 mr-2 flex-shrink-0" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder={t('searchExperiences')}
-              className="bg-transparent border-none focus:outline-none text-sm text-white w-full placeholder-gray-500"
-              value={searchQuery}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setTimeout(() => { if (!searchQuery) closeSearch(); }, 150)}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                closeSearch();
-              }}
-              className="text-gray-400 hover:text-white p-1"
-            >
-              <X size={14} />
-            </button>
-          </div>
+        {/* Search Header - when list is open, entire banner is clickable to close */}
+        {(isSearchOpen || isSearchClosing) && (
+          <button
+            data-tutorial="search"
+            onClick={(e) => {
+              e.stopPropagation();
+              closeSearch();
+            }}
+            className={`flex-1 flex items-center bg-gray-700/50 rounded-lg px-3 h-[36px] cursor-pointer hover:bg-gray-600/50 transition-colors ${isSearchClosing ? 'animate-scale-out' : 'animate-scale-in'}`}
+          >
+            <MapPin size={14} className="text-blue-400 mr-2 flex-shrink-0" />
+            <span className="text-sm text-white flex-1 text-left select-none">
+              {language === 'zh' ? '所有地点' : 'All Locations'}
+              <span className="text-gray-400 ml-2">({allRestaurantsWithMaps.length})</span>
+            </span>
+            <div className="text-gray-400 p-1 transition-transform duration-200">
+              <ChevronUp size={16} />
+            </div>
+          </button>
         )}
 
         {/* Search, Filter, and Notification Buttons */}
-        {!showSearchInput && (
+        {!isSearchOpen && !isSearchClosing && (
           <div className="flex items-center gap-0.5 animate-scale-in relative">
             <button
-              onClick={(e) => { e.stopPropagation(); setIsSearchFocused(true); }}
+              onClick={(e) => { e.stopPropagation(); handleSearchToggle(); }}
               className="p-1.5 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white"
             >
               <Search size={18} />
@@ -189,22 +260,94 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         )}
       </div>
 
-      {/* Search Results */}
-      {searchQuery && (
-        <div className="mt-2 border-t border-gray-700 pt-2 max-h-60 overflow-y-auto">
-          {searchResults.length > 0 ? (
-            searchResults.map(r => (
-              <button
-                key={r.id}
-                onClick={(e) => { e.stopPropagation(); onSearchSelect(r); }}
-                className="w-full text-left px-2 py-2 hover:bg-gray-700 rounded text-sm text-gray-300 hover:text-white flex flex-col"
-              >
-                <span className="font-semibold">{r.name}</span>
-                <span className="text-xs text-gray-500 truncate">{r.address}</span>
-              </button>
-            ))
+      {/* Pin List - shows when search is open */}
+      {(isSearchOpen || isSearchClosing) && (
+        <div className={`mt-2 border-t border-gray-700 pt-2 h-72 overflow-y-auto overflow-x-hidden ${isSearchClosing ? 'animate-collapse-up' : 'animate-expand-down'}`}>
+          {allRestaurantsWithMaps.length === 0 ? (
+            <div className="text-center py-6 text-gray-500">
+              <MapPin size={32} className="mx-auto mb-2 opacity-50" />
+              <p className="text-sm">{language === 'zh' ? '暂无地点' : 'No locations yet'}</p>
+              <p className="text-xs mt-1">{language === 'zh' ? '添加你的第一个体验！' : 'Add your first experience!'}</p>
+            </div>
           ) : (
-            <p className="text-gray-500 text-sm px-2 py-1">{t('noResults')}</p>
+            <div className="space-y-1">
+              {groupedByMap.filter(([mapId]) => mapId !== 'guest-demo-map').map(([mapId, { mapName, restaurants }]) => {
+                const isExpanded = expandedMaps.has(mapId);
+                return (
+                  <div key={mapId} className="rounded-lg overflow-hidden">
+                    {/* Map Section Header - Clickable */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleMapExpansion(mapId);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-700/50 transition-colors ${
+                        mapId === activeMapId ? 'bg-blue-500/10' : 'bg-gray-700/30'
+                      }`}
+                    >
+                      {/* Expand/Collapse Chevron */}
+                      <div className="transition-transform duration-200" style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                        <ChevronRight size={14} className={mapId === activeMapId ? 'text-blue-400' : 'text-gray-500'} />
+                      </div>
+                      
+                      <Map size={12} className={mapId === activeMapId ? 'text-blue-400' : 'text-gray-500'} />
+                      <span className={`text-xs font-medium uppercase tracking-wide flex-1 text-left ${mapId === activeMapId ? 'text-blue-400' : 'text-gray-400'}`}>
+                        {mapName}
+                        {mapId === activeMapId && (
+                          <span className="ml-1 text-[10px] normal-case text-blue-300">
+                            ({language === 'zh' ? '当前' : 'current'})
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-xs text-gray-500 bg-gray-700/50 px-1.5 py-0.5 rounded">
+                        {restaurants.length}
+                      </span>
+                    </button>
+                    
+                    {/* Restaurants in this map - Collapsible */}
+                    <div 
+                      className="overflow-hidden transition-all duration-200 ease-out"
+                      style={{
+                        maxHeight: isExpanded ? `${restaurants.length * 56 + 8}px` : '0px',
+                        opacity: isExpanded ? 1 : 0,
+                      }}
+                    >
+                      <div className="py-1 space-y-0.5 px-1">
+                        {restaurants.map(r => {
+                          const bestGrade = getBestGrade(r.visits);
+                          return (
+                            <button
+                              key={`${r.mapId}-${r.id}`}
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                onSelectPin(r);
+                              }}
+                              className="w-full text-left px-2 py-2 hover:bg-gray-700 rounded-lg text-sm text-gray-300 hover:text-white flex items-center gap-3 transition-colors"
+                            >
+                              {/* Grade Badge */}
+                              <div className={`w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center text-xs font-bold ${getGradeColor(bestGrade)} bg-gray-700/50`}>
+                                {bestGrade}
+                              </div>
+                              
+                              {/* Restaurant Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">{r.name}</div>
+                                <div className="text-xs text-gray-500 truncate">{r.address}</div>
+                              </div>
+                              
+                              {/* Visit Count */}
+                              <div className="flex-shrink-0 text-xs text-gray-500">
+                                {r.visits.length} {r.visits.length === 1 ? (language === 'zh' ? '次' : 'visit') : (language === 'zh' ? '次' : 'visits')}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       )}

@@ -68,15 +68,3 @@ export const calculateAverageGrade = (visits: Visit[]): string => {
   const avgScore = totalScore / visits.length;
   return scoreToGrade(avgScore);
 };
-
-export const getBestGrade = (visits: Visit[]): string => {
-  if (!visits || visits.length === 0) return 'N/A';
-  let bestScore = -1;
-  visits.forEach(v => {
-    const score = gradeToScore(v.rating);
-    if (score > bestScore) {
-      bestScore = score;
-    }
-  });
-  return scoreToGrade(bestScore);
-};
