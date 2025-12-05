@@ -44,7 +44,7 @@ export const AddButton: React.FC<AddButtonProps> = ({
         className={`pointer-events-auto group relative flex items-center justify-center w-16 h-16 rounded-full border backdrop-blur-xl shadow-[0_0_20px_rgba(0,0,0,0.3)] transition-all duration-300 ease-out active:scale-95
           ${isAddModalOpen
             ? 'bg-red-500/80 border-red-400/50 shadow-red-500/20'
-            : 'bg-gray-900/40 border-white/20 hover:bg-gray-900/60 hover:shadow-blue-500/20 hover:scale-105'
+            : 'bg-gray-900/70 border-white/30 hover:bg-gray-900/80 hover:shadow-blue-500/20 hover:scale-105'
           }
         `}
         title={isAddModalOpen ? "Close" : "Add Memory"}

@@ -559,8 +559,6 @@ function App() {
       {viewState === ViewState.INFO && (
         <InfoModal
           onClose={() => setViewState(ViewState.MAP)}
-          onClearDatabase={handleClearDatabase}
-          isAdmin={userProfile?.role === 'admin'}
         />
       )}
 

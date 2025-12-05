@@ -1,12 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { User as UserIcon, Crown } from 'lucide-react';
 import { UserMap, MapMember } from '../types';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface MemberAvatarsProps {
   activeMap: UserMap;
 }
 
 export const MemberAvatars: React.FC<MemberAvatarsProps> = ({ activeMap }) => {
+  const { t } = useLanguage();
   const [clickedMemberUid, setClickedMemberUid] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
@@ -20,14 +22,16 @@ export const MemberAvatars: React.FC<MemberAvatarsProps> = ({ activeMap }) => {
     // Check if owner is already in memberInfo
     const ownerInList = members.find(m => m.uid === activeMap.ownerUid);
     
-    // Create owner entry if not in list, using ownerPhotoURL from map data as fallback
-    const ownerMember: MapMember = ownerInList || {
+    // Create owner entry using enriched ownerPhotoURL from map data (this is updated on load)
+    // This ensures we always use the latest owner photo from their profile
+    const ownerMember: MapMember = {
       uid: activeMap.ownerUid,
-      displayName: activeMap.ownerDisplayName || activeMap.ownerEmail || 'Owner',
-      photoURL: activeMap.ownerPhotoURL || null,
+      displayName: activeMap.ownerDisplayName || ownerInList?.displayName || 'Owner',
+      // Prefer enriched ownerPhotoURL over what's stored in memberInfo
+      photoURL: activeMap.ownerPhotoURL || ownerInList?.photoURL || null,
     };
     
-    // Filter out owner from members (we'll add them first)
+    // Filter out owner from members (we'll add them first with updated photo)
     const otherMembers = members.filter(m => m.uid !== activeMap.ownerUid);
     
     // Owner first, then other members
@@ -133,7 +137,7 @@ export const MemberAvatars: React.FC<MemberAvatarsProps> = ({ activeMap }) => {
                   {member.displayName}
                 </div>
                 <div className={`text-xs ${isOwner ? 'text-purple-400' : 'text-gray-400'}`}>
-                  {isOwner ? 'Owner' : 'Member'}
+                  {isOwner ? t('owner') : t('member')}
                 </div>
                 {/* Arrow */}
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-800 border-l border-b border-gray-600 rotate-45" />

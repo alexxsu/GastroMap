@@ -7,6 +7,7 @@ import { compressImage } from '../utils/image';
 import { storage } from '../firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import heic2any from 'heic2any';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface EditVisitModalProps {
   visit: Visit;
@@ -21,6 +22,7 @@ const EditVisitModal: React.FC<EditVisitModalProps> = ({
   onClose, 
   onSave 
 }) => {
+  const { t } = useLanguage();
   const [rating, setRating] = useState(visit.rating);
   const [comment, setComment] = useState(visit.comment);
   const [isClosing, setIsClosing] = useState(false);
@@ -235,11 +237,11 @@ const EditVisitModal: React.FC<EditVisitModalProps> = ({
 
           {/* Comment Section */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('notes')}</label>
             <textarea 
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Update your comments..."
+              placeholder={t('updateComment')}
               className="w-full h-24 bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500 resize-none"
             />
           </div>
@@ -251,7 +253,7 @@ const EditVisitModal: React.FC<EditVisitModalProps> = ({
             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-900/20 transition transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
           >
             {isSaving ? <Loader2 size={18} className="animate-spin"/> : <Save size={18} />}
-            {isSaving ? 'Updating...' : 'Save Changes'}
+            {isSaving ? t('updating') : t('saveChanges')}
           </button>
 
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useImperativeHandle, forwardRef, useEffect, useRef } from 'react';
 import { Crosshair, Map } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -19,6 +19,7 @@ export const MapControls = forwardRef<MapControlsRef, MapControlsProps>(({
 }, ref) => {
   const { t } = useLanguage();
   const [clickedButton, setClickedButton] = useState<'zoom' | 'mapType' | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const getMapTypeTitle = () => {
     if (mapType === 'satellite') return t('switchToRoad');
@@ -33,6 +34,23 @@ export const MapControls = forwardRef<MapControlsRef, MapControlsProps>(({
     }
   }));
 
+  // Reset click state when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setClickedButton(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
+
   const handleZoomClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     setClickedButton('zoom');
     onZoomToMunicipality();
@@ -46,7 +64,7 @@ export const MapControls = forwardRef<MapControlsRef, MapControlsProps>(({
   };
 
   return (
-    <div className="absolute bottom-24 right-4 z-10 flex flex-col gap-3 pointer-events-auto">
+    <div ref={containerRef} className="absolute bottom-24 right-4 z-10 flex flex-col gap-3 pointer-events-auto">
       <button
         onClick={handleZoomClick}
         className={`bg-gray-800/90 backdrop-blur border p-3 rounded-full shadow-lg text-white hover:bg-gray-700 active:bg-gray-600 transition group focus:outline-none focus:ring-0

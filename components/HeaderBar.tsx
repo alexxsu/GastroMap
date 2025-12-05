@@ -114,7 +114,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Search your experiences..."
+              placeholder={t('searchExperiences')}
               className="bg-transparent border-none focus:outline-none text-sm text-white w-full placeholder-gray-500"
               value={searchQuery}
               onFocus={() => setIsSearchFocused(true)}
@@ -229,8 +229,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               ))}
             </div>
             <div className="border-t border-gray-700 mt-2 pt-2 flex justify-between text-xs px-1">
-              <button onClick={(e) => { e.stopPropagation(); onSelectAllGrades(); }} className="text-blue-400 hover:text-blue-300">{language === 'zh' ? '全选' : 'Select All'}</button>
-              <button onClick={(e) => { e.stopPropagation(); onClearAllGrades(); }} className="text-gray-500 hover:text-gray-400">{language === 'zh' ? '清除' : 'Clear All'}</button>
+              <button onClick={(e) => { e.stopPropagation(); onSelectAllGrades(); }} className="text-blue-400 hover:text-blue-300">{t('selectAll')}</button>
+              <button onClick={(e) => { e.stopPropagation(); onClearAllGrades(); }} className="text-gray-500 hover:text-gray-400">{t('clearAll')}</button>
             </div>
           </div>
         </>

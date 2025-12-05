@@ -198,6 +198,15 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
     const getTypeStyles = () => {
       switch (type) {
         case 'default':
+          // Check if it's a public map (like demo map) vs private default map
+          if (map.visibility === 'public') {
+            return {
+              icon: <Globe size={18} className="text-green-400" />,
+              bgColor: 'bg-green-500/20',
+              activeBg: 'bg-green-600/20 border border-green-500/50',
+              label: language === 'zh' ? '公开' : 'Public'
+            };
+          }
           return {
             icon: <Lock size={18} className="text-blue-400" />,
             bgColor: 'bg-blue-500/20',

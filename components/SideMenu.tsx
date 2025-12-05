@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, User as UserIcon, BarChart2, Layers, Info, Shield, Check } from 'lucide-react';
 import { AppUser } from '../hooks/useAuth';
 import { UserProfile } from '../types';
@@ -42,15 +42,61 @@ export const SideMenu: React.FC<SideMenuProps> = ({
 }) => {
   const { t, language, setLanguage } = useLanguage();
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
-
-  if (!isMenuOpen && !isMenuClosing) return null;
+  const [isLanguageMenuClosing, setIsLanguageMenuClosing] = useState(false);
+  const languageMenuRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = userProfile?.role === 'admin';
 
+  const closeLanguageMenu = () => {
+    if (showLanguageMenu) {
+      setIsLanguageMenuClosing(true);
+      setTimeout(() => {
+        setShowLanguageMenu(false);
+        setIsLanguageMenuClosing(false);
+      }, 150);
+    }
+  };
+
   const handleLanguageSelect = (lang: Language) => {
     setLanguage(lang);
-    setShowLanguageMenu(false);
+    closeLanguageMenu();
   };
+
+  // Close language menu when clicking outside - must be before any early return
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (languageMenuRef.current && !languageMenuRef.current.contains(e.target as Node)) {
+        if (showLanguageMenu) {
+          setIsLanguageMenuClosing(true);
+          setTimeout(() => {
+            setShowLanguageMenu(false);
+            setIsLanguageMenuClosing(false);
+          }, 150);
+        }
+      }
+    };
+
+    if (showLanguageMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showLanguageMenu]);
+
+  // Reset language menu when side menu closes - must be before any early return
+  useEffect(() => {
+    if (isMenuClosing) {
+      setShowLanguageMenu(false);
+      setIsLanguageMenuClosing(false);
+    }
+  }, [isMenuClosing]);
+
+  // Early return AFTER all hooks
+  if (!isMenuOpen && !isMenuClosing) return null;
 
   return (
     <>
@@ -137,9 +183,15 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             </button>
 
             {/* Language Selector */}
-            <div className="relative">
+            <div className="relative" ref={languageMenuRef}>
               <button
-                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                onClick={() => {
+                  if (showLanguageMenu) {
+                    closeLanguageMenu();
+                  } else {
+                    setShowLanguageMenu(true);
+                  }
+                }}
                 className="w-full flex items-center gap-4 px-4 py-3.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200 group"
               >
                 <div className="w-10 h-10 rounded-full bg-gray-800 group-hover:bg-gray-700 flex items-center justify-center transition-colors duration-200">
@@ -151,9 +203,15 @@ export const SideMenu: React.FC<SideMenuProps> = ({
                 </div>
               </button>
 
-              {/* Language Dropdown */}
-              {showLanguageMenu && (
-                <div className="absolute left-4 right-4 mt-1 bg-gray-800 border border-gray-700 rounded-xl shadow-lg overflow-hidden z-10">
+              {/* Language Dropdown with animation */}
+              {(showLanguageMenu || isLanguageMenuClosing) && (
+                <div 
+                  className={`absolute left-4 right-4 mt-1 bg-gray-800 border border-gray-700 rounded-xl shadow-lg overflow-hidden z-10 transition-all duration-150 origin-top ${
+                    isLanguageMenuClosing 
+                      ? 'opacity-0 scale-y-95' 
+                      : 'opacity-100 scale-y-100'
+                  }`}
+                >
                   <button
                     onClick={() => handleLanguageSelect('en')}
                     className="w-full flex items-center justify-between px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"

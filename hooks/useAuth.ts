@@ -210,11 +210,12 @@ export function useAuth(): UseAuthReturn {
   };
 
   const loginAsGuest = async (): Promise<UserMap> => {
+    // Local-only guest user - no Firebase account created
     const guestProfile: UserProfile = {
       email: 'guest@tracebook.app',
       status: 'approved',
       emailVerified: true,
-      role: 'user',
+      role: 'guest',
       createdAt: new Date().toISOString()
     };
 
@@ -232,7 +233,7 @@ export function useAuth(): UseAuthReturn {
 
     const demoMap: UserMap = {
       id: 'guest-demo-map',
-      ownerUid: 'guest-user',
+      ownerUid: 'demo-owner',
       ownerDisplayName: 'Demo',
       name: 'Demo Map',
       visibility: 'public',
@@ -240,22 +241,12 @@ export function useAuth(): UseAuthReturn {
       createdAt: new Date().toISOString()
     };
 
-    // Ensure the guest-demo-map document exists in Firestore
-    try {
-      const mapRef = doc(db, 'maps', 'guest-demo-map');
-      const mapDoc = await getDoc(mapRef);
-      if (!mapDoc.exists()) {
-        await setDoc(mapRef, demoMap);
-      }
-    } catch (e) {
-      console.error("Error creating guest demo map:", e);
-    }
-
     return demoMap;
   };
 
   const logout = async () => {
     if (user?.isAnonymous) {
+      // Guest user is local-only, just clear state
       setUser(null);
       setUserProfile(null);
     } else {

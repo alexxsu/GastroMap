@@ -169,11 +169,15 @@ const translations = {
     memory: 'Memory',
     memories: 'Memories',
     writeComment: 'Write a comment...',
+    updateComment: 'Update your comments...',
+    notes: 'Notes',
+    updating: 'Updating...',
     addPhotos: 'Add Photos',
     removePhoto: 'Remove Photo',
     tapToRate: 'Tap to rate',
     selectDate: 'Select date',
     today: 'Today',
+    year: 'Year',
     noExperiences: 'No experiences yet',
     addFirstExperience: 'Add your first experience!',
     confirmDeleteExperience: 'Are you sure you want to delete this experience?',
@@ -182,6 +186,7 @@ const translations = {
     by: 'by',
     on: 'on',
     at: 'at',
+    ratingSystem: 'Rating System',
     
     // Grades/Ratings
     gradeS: 'Outstanding',
@@ -253,6 +258,11 @@ const translations = {
     failedToLoad: 'Failed to load',
     tryAgain: 'Try Again',
     loadingUsers: 'Loading users...',
+    confirmRejectUser: 'Are you sure you want to reject this user? They will not be able to access the app.',
+    confirmDeleteUser: 'Are you sure you want to delete this user? This will remove their profile data. Note: To fully remove auth, you\'ll need to delete them from Firebase Console.',
+    searchExperiences: 'Search your experiences...',
+    selectAll: 'Select All',
+    clearAll: 'Clear All',
     
     // Confirmations
     confirmDelete: 'Are you sure you want to delete this?',
@@ -486,11 +496,15 @@ const translations = {
     memory: '记忆',
     memories: '记忆',
     writeComment: '写下你的感想...',
+    updateComment: '更新你的评论...',
+    notes: '备注',
+    updating: '更新中...',
     addPhotos: '添加照片',
     removePhoto: '移除照片',
     tapToRate: '点击评分',
     selectDate: '选择日期',
     today: '今天',
+    year: '年份',
     noExperiences: '暂无体验',
     addFirstExperience: '添加你的第一个体验！',
     confirmDeleteExperience: '确定要删除这个体验吗？',
@@ -499,6 +513,7 @@ const translations = {
     by: '由',
     on: '于',
     at: '在',
+    ratingSystem: '评分系统',
     
     // Grades/Ratings
     gradeS: '卓越',
@@ -570,6 +585,11 @@ const translations = {
     failedToLoad: '加载失败',
     tryAgain: '重试',
     loadingUsers: '加载用户中...',
+    confirmRejectUser: '确定要拒绝此用户吗？他们将无法访问应用。',
+    confirmDeleteUser: '确定要删除此用户吗？这将删除其个人资料数据。注意：要完全删除身份验证，您需要在 Firebase 控制台中删除他们。',
+    searchExperiences: '搜索你的体验...',
+    selectAll: '全选',
+    clearAll: '清除',
     
     // Confirmations
     confirmDelete: '确定要删除吗？',

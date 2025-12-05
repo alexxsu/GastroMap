@@ -3,6 +3,7 @@ import { X, Users, Check, XIcon, Trash2, Loader2, ChevronRight, ArrowLeft, Shiel
 import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { UserProfile } from '../types';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface UserWithId extends UserProfile {
   id: string;
@@ -17,6 +18,7 @@ type ManagementView = 'menu' | 'users';
 export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
   onClose
 }) => {
+  const { t, language } = useLanguage();
   const [isClosing, setIsClosing] = useState(false);
   const [currentView, setCurrentView] = useState<ManagementView>('menu');
   const [users, setUsers] = useState<UserWithId[]>([]);
@@ -103,7 +105,7 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
   };
 
   const handleRejectUser = async (userId: string) => {
-    if (!window.confirm('Are you sure you want to reject this user? They will not be able to access the app.')) {
+    if (!window.confirm(t('confirmRejectUser'))) {
       return;
     }
     setActionLoading(userId);
@@ -115,14 +117,14 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
       ));
     } catch (error) {
       console.error('Error rejecting user:', error);
-      alert('Failed to reject user');
+      alert(t('saveFailed'));
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleDeleteUser = async (userId: string, email: string) => {
-    if (!window.confirm(`Are you sure you want to delete ${email}? This will remove their profile data. Note: To fully remove auth, you'll need to delete them from Firebase Console.`)) {
+    if (!window.confirm(t('confirmDeleteUser'))) {
       return;
     }
     setActionLoading(userId);
@@ -132,7 +134,7 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
       setUsers(prev => prev.filter(u => u.id !== userId));
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert('Failed to delete user');
+      alert(t('saveFailed'));
     } finally {
       setActionLoading(null);
     }
@@ -140,7 +142,7 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
 
   const formatDate = (dateStr: string) => {
     try {
-      return new Date(dateStr).toLocaleDateString('en-US', {
+      return new Date(dateStr).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric'
@@ -168,8 +170,8 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
             <div className="flex items-center gap-2">
               <Shield size={20} className="text-purple-400" />
               <h2 className="text-lg font-semibold text-white">
-                {currentView === 'menu' && 'Site Management'}
-                {currentView === 'users' && 'User Management'}
+                {currentView === 'menu' && t('siteManagement')}
+                {currentView === 'users' && t('userManagement')}
               </h2>
             </div>
           </div>
@@ -193,8 +195,8 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
                     <Users size={20} className="text-blue-400" />
                   </div>
                   <div className="text-left">
-                    <p className="font-medium text-white">User Management</p>
-                    <p className="text-sm text-gray-400">Approve, reject, or delete users</p>
+                    <p className="font-medium text-white">{t('userManagement')}</p>
+                    <p className="text-sm text-gray-400">{t('approveRejectUsers')}</p>
                   </div>
                 </div>
                 <ChevronRight size={20} className="text-gray-500 group-hover:text-white transition" />
@@ -202,7 +204,7 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
               
               {/* Placeholder for future options */}
               <div className="pt-4 border-t border-gray-700 mt-4">
-                <p className="text-xs text-gray-500 text-center">More options coming soon...</p>
+                <p className="text-xs text-gray-500 text-center">{t('moreOptionsSoon')}</p>
               </div>
             </div>
           )}
@@ -213,18 +215,18 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Loader2 size={32} className="animate-spin text-blue-400 mb-3" />
-                  <p className="text-gray-400">Loading users...</p>
+                  <p className="text-gray-400">{t('loadingUsers')}</p>
                 </div>
               ) : fetchError ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-center">
-                    <p className="text-red-300 font-medium mb-2">Failed to load users</p>
+                    <p className="text-red-300 font-medium mb-2">{t('failedToLoad')}</p>
                     <p className="text-red-400/70 text-sm mb-4">{fetchError}</p>
                     <button
                       onClick={fetchUsers}
                       className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition text-sm"
                     >
-                      Try Again
+                      {t('tryAgain')}
                     </button>
                   </div>
                 </div>
@@ -235,12 +237,12 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
                     <div className="flex items-center gap-2 mb-3">
                       <Clock size={16} className="text-yellow-400" />
                       <h3 className="text-sm font-medium text-yellow-400 uppercase tracking-wide">
-                        Pending Approval ({pendingUsers.length})
+                        {t('pendingUsers')} ({pendingUsers.length})
                       </h3>
                     </div>
                     {pendingUsers.length === 0 ? (
                       <div className="text-gray-500 text-center py-4 bg-gray-700/30 rounded-xl border border-dashed border-gray-600">
-                        No pending users
+                        {t('noPendingUsers')}
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -256,17 +258,17 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
                                 </p>
                                 {!user.emailVerified && (
                                   <span className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">
-                                    Email not verified
+                                    {t('emailNotVerified')}
                                   </span>
                                 )}
                                 {user.emailVerified && (
                                   <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">
-                                    Email verified
+                                    {t('emailVerified')}
                                   </span>
                                 )}
                               </div>
                               <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                              <p className="text-xs text-gray-500">Joined {formatDate(user.createdAt)}</p>
+                              <p className="text-xs text-gray-500">{t('joined')} {formatDate(user.createdAt)}</p>
                             </div>
                             <div className="flex items-center gap-2 ml-3">
                               {actionLoading === user.id ? (
@@ -276,14 +278,14 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
                                   <button
                                     onClick={() => handleApproveUser(user.id)}
                                     className="p-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg transition"
-                                    title="Approve"
+                                    title={t('approve')}
                                   >
                                     <Check size={16} />
                                   </button>
                                   <button
                                     onClick={() => handleRejectUser(user.id)}
                                     className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition"
-                                    title="Reject"
+                                    title={t('reject')}
                                   >
                                     <XIcon size={16} />
                                   </button>
@@ -301,12 +303,12 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
                     <div className="flex items-center gap-2 mb-3">
                       <Check size={16} className="text-green-400" />
                       <h3 className="text-sm font-medium text-green-400 uppercase tracking-wide">
-                        Approved Users ({approvedUsers.length})
+                        {t('approvedUsers')} ({approvedUsers.length})
                       </h3>
                     </div>
                     {approvedUsers.length === 0 ? (
                       <div className="text-gray-500 text-center py-4 bg-gray-700/30 rounded-xl border border-dashed border-gray-600">
-                        No approved users yet
+                        {t('noApprovedUsers')}
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -322,12 +324,12 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
                                 </p>
                                 {user.role === 'admin' && (
                                   <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">
-                                    Admin
+                                    {t('admin')}
                                   </span>
                                 )}
                               </div>
                               <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                              <p className="text-xs text-gray-500">Joined {formatDate(user.createdAt)}</p>
+                              <p className="text-xs text-gray-500">{t('joined')} {formatDate(user.createdAt)}</p>
                             </div>
                             <div className="flex items-center gap-2 ml-3">
                               {actionLoading === user.id ? (
@@ -336,7 +338,7 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
                                 <button
                                   onClick={() => handleDeleteUser(user.id, user.email)}
                                   className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition"
-                                  title="Delete User"
+                                  title={t('delete')}
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -351,7 +353,7 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
                   {/* Summary */}
                   <div className="pt-4 border-t border-gray-700">
                     <p className="text-xs text-gray-500 text-center">
-                      Total Users: {users.length} • Pending: {pendingUsers.length} • Approved: {approvedUsers.length}
+                      {t('totalUsers')}: {users.length} • {t('pending')}: {pendingUsers.length} • {t('approved')}: {approvedUsers.length}
                     </p>
                   </div>
                 </div>

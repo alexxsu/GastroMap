@@ -234,17 +234,19 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                   </button>
                 </div>
 
-                {/* Logout button - subtle, smaller, text-only style */}
-                <button
-                  onClick={() => {
-                    onClose();
-                    onLogout();
-                  }}
-                  className="w-full flex items-center justify-center gap-1.5 py-1.5 text-gray-500 hover:text-red-400 transition-colors text-xs"
-                >
-                  <LogOut size={12} />
-                  {t('logout')}
-                </button>
+                {/* Logout button - separated with margin and border */}
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onLogout();
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 px-4 border border-red-500/30 hover:border-red-500/50 hover:bg-red-500/10 text-red-400 rounded-lg transition-colors text-xs"
+                  >
+                    <LogOut size={12} />
+                    {t('logout')}
+                  </button>
+                </div>
               </div>
             )}
           </div>
