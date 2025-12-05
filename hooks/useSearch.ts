@@ -1,10 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Restaurant } from '../types';
+import { Restaurant, UserMap } from '../types';
+
+export interface MapSearchSource {
+  map: UserMap;
+  restaurants: Restaurant[];
+}
+
+export interface SearchResultGroup {
+  map: UserMap;
+  matches: Restaurant[];
+}
 
 interface UseSearchReturn {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  searchResults: Restaurant[];
+  searchResults: SearchResultGroup[];
   isSearchFocused: boolean;
   setIsSearchFocused: (focused: boolean) => void;
   isSearchClosing: boolean;
@@ -13,26 +23,48 @@ interface UseSearchReturn {
   handleSearchSelect: (restaurant: Restaurant, mapInstance: google.maps.Map | null, onSelect: (r: Restaurant) => void) => void;
 }
 
-export function useSearch(restaurants: Restaurant[]): UseSearchReturn {
+export function useSearch(
+  sources: MapSearchSource[],
+  options?: { showAllWhenEmpty?: boolean }
+): UseSearchReturn {
+  const showAllWhenEmpty = options?.showAllWhenEmpty ?? false;
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResultGroup[]>([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSearchClosing, setIsSearchClosing] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Filter results based on query
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setSearchResults([]);
-    } else {
-      const lowerQuery = searchQuery.toLowerCase();
-      const results = restaurants.filter(r =>
-        r.name.toLowerCase().includes(lowerQuery) ||
-        r.address.toLowerCase().includes(lowerQuery)
-      );
-      setSearchResults(results);
+    const trimmed = searchQuery.trim();
+
+    if (trimmed === '') {
+      if (showAllWhenEmpty) {
+        const grouped = sources
+          .map(source => ({
+            map: source.map,
+            matches: source.restaurants
+          }))
+          .filter(group => group.matches.length > 0);
+        setSearchResults(grouped);
+      } else {
+        setSearchResults([]);
+      }
+      return;
     }
-  }, [searchQuery, restaurants]);
+
+    const lowerQuery = trimmed.toLowerCase();
+    const grouped = sources
+      .map(source => ({
+        map: source.map,
+        matches: source.restaurants.filter(r =>
+          r.name.toLowerCase().includes(lowerQuery) ||
+          r.address.toLowerCase().includes(lowerQuery)
+        )
+      }))
+      .filter(group => group.matches.length > 0);
+    setSearchResults(grouped);
+  }, [searchQuery, sources, showAllWhenEmpty]);
 
   // Auto-focus search input when activated
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Lock, Users, Globe, Settings } from 'lucide-react';
 import { UserMap, UserProfile } from '../types';
 import { AppUser } from '../hooks/useAuth';
@@ -52,6 +52,8 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
   restaurantsCount,
   filteredCount
 }) => {
+  const [isAdminListOpen, setIsAdminListOpen] = useState(false);
+
   const getPillStyles = () => {
     if (isCompactCardOpen) {
       return 'bg-blue-600/90 border-blue-400/50 text-white';
@@ -75,6 +77,35 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
     return <Globe size={16} className={isCompactCardOpen ? 'text-white' : 'text-green-400'} />;
   };
 
+  const categorizeMaps = (maps: UserMap[]) => {
+    const myDefaults = maps.filter(m => m.ownerUid === user?.uid && m.isDefault);
+    const myShared = maps.filter(m => m.ownerUid === user?.uid && !m.isDefault);
+    const others = maps.filter(m => m.ownerUid !== user?.uid);
+    return [
+      { key: 'my-default', label: 'Your Default Maps', items: myDefaults },
+      { key: 'my-shared', label: 'Your Shared Maps', items: myShared },
+      { key: 'others', label: 'Other Maps', items: others }
+    ].filter(section => section.items.length > 0);
+  };
+
+  const getDisplayName = (map: UserMap) => {
+    // For admins viewing others, show owner - map name
+    if (userProfile?.role === 'admin' && map.ownerUid !== user?.uid) {
+      return `${getOwnerDisplayName(map)} - ${map.name}`;
+    }
+    return map.name;
+  };
+
+  const optionLabel = (map: UserMap) => {
+    const name = map.name;
+    const lock = "\uD83D\uDD12";      // 🔒
+    const usersIcon = "\uD83D\uDC65"; // 👥
+    const globe = "\uD83C\uDF10";     // 🌐
+    if (map.isDefault) return `${lock} ${name} - Private`;
+    if (map.ownerUid === user?.uid) return `${usersIcon} ${name}`;
+    return `${globe} ${name} (${getOwnerDisplayName(map)})`;
+  };
+
   return (
     <>
       {/* Pill Button */}
@@ -84,7 +115,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
         className={`flex items-center gap-2.5 pl-2 pr-4 py-1.5 mt-1 rounded-full backdrop-blur border shadow-lg transition-all duration-200 text-sm font-medium pointer-events-auto self-start ${getPillStyles()}`}
       >
         {getIcon()}
-        <span className="truncate max-w-[160px]">{activeMap.name}</span>
+        <span className="truncate max-w-[200px]">{getDisplayName(activeMap)}</span>
       </button>
 
       {/* Compact Viewing Card */}
@@ -111,8 +142,8 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
             )}
           </div>
 
-          {/* Map selector dropdown - for non-guest users with maps */}
-          {!user?.isAnonymous && (userOwnMaps.length > 0 || userSharedMaps.length > 0 || userJoinedMaps.length > 0) && (
+          {/* Map selector dropdown - for non-guest, non-admin users with maps */}
+          {!user?.isAnonymous && userProfile?.role !== 'admin' && (userOwnMaps.length > 0 || userSharedMaps.length > 0 || userJoinedMaps.length > 0) && (
             <div className="mt-2 pt-2 border-t border-gray-700">
               <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Switch Map</label>
               <select
@@ -129,7 +160,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                   <optgroup label="Your Default Map - Private">
                     {userOwnMaps.filter(m => m.isDefault).map((m) => (
                       <option key={m.id} value={m.id}>
-                        🔒 {m.name} - Private
+                        {optionLabel(m)}
                       </option>
                     ))}
                   </optgroup>
@@ -140,7 +171,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                   <optgroup label="Shared Maps (Owner)">
                     {userSharedMaps.map((m) => (
                       <option key={m.id} value={m.id}>
-                        👥 {m.name}
+                        {optionLabel(m)}
                       </option>
                     ))}
                   </optgroup>
@@ -151,7 +182,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                   <optgroup label="Shared Maps (Joined)">
                     {userJoinedMaps.map((m) => (
                       <option key={m.id} value={m.id}>
-                        🌐 {m.name} ({getOwnerDisplayName(m)})
+                        {optionLabel(m)}
                       </option>
                     ))}
                   </optgroup>
@@ -160,24 +191,56 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
             </div>
           )}
 
-          {/* Admin all maps selector */}
+          {/* Admin all maps selector - inline collapsible */}
           {userProfile?.role === 'admin' && allMaps.length > 0 && (
             <div className="mt-2 pt-2 border-t border-gray-700">
               <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Admin: All Maps</label>
-              <select
-                className="w-full bg-gray-800 text-gray-100 text-[11px] rounded-md px-2 py-1 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                value={activeMap.id}
-                onChange={(e) => {
-                  const selected = allMaps.find((m) => m.id === e.target.value);
-                  if (selected) onSelectMap(selected);
-                }}
+              <button
+                onClick={() => setIsAdminListOpen(!isAdminListOpen)}
+                className="w-full text-left text-[11px] text-gray-100 px-1.5 py-1 rounded-md hover:text-white hover:bg-gray-800 transition"
               >
-                {allMaps.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {getOwnerDisplayName(m) + ' – ' + m.name}
-                  </option>
-                ))}
-              </select>
+                {getOwnerDisplayName(activeMap) + ' - ' + activeMap.name}
+              </button>
+              {isAdminListOpen && (
+                <div className="mt-2 max-h-60 overflow-y-auto rounded-lg border border-gray-700 bg-gray-900/90 animate-scale-in">
+                  {categorizeMaps(allMaps).map(section => (
+                    <div key={section.key} className="px-2 py-1.5 border-b border-gray-800 last:border-b-0">
+                      <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-0.5">{section.label}</div>
+                      <div className="flex flex-col">
+                        {section.items.map(map => (
+                          <div
+                            key={map.id}
+                            onClick={() => {
+                              onSelectMap(map);
+                              setIsAdminListOpen(false);
+                              setIsCompactCardOpen(false);
+                            }}
+                            className={`w-full text-left px-2 py-0.5 rounded cursor-pointer transition ${
+                              map.id === activeMap.id
+                                ? 'bg-gray-800 text-white'
+                                : 'text-gray-200 hover:bg-gray-800/70'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {map.isDefault ? (
+                                <Lock size={14} className="text-blue-400" />
+                              ) : map.ownerUid === user?.uid ? (
+                                <Users size={14} className="text-purple-400" />
+                              ) : (
+                                <Globe size={14} className="text-green-400" />
+                              )}
+                              <div className="flex flex-col leading-tight">
+                                <span className="text-sm">{map.name}</span>
+                                <span className="text-[11px] text-gray-500">{getOwnerDisplayName(map)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -211,3 +274,6 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
     </>
   );
 };
+
+
+

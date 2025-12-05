@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { Restaurant, Visit, ViewState, UserMap } from './types';
-import { GOOGLE_MAPS_API_KEY } from './firebaseConfig';
+import { collection, getDocs } from 'firebase/firestore';
+import { Restaurant, Visit, ViewState, UserMap, GUEST_ID } from './types';
+import { db, GOOGLE_MAPS_API_KEY } from './firebaseConfig';
 
 // Hooks
 import {
@@ -90,6 +91,106 @@ function App() {
     clearDatabase
   } = useRestaurants(user, userProfile, activeMap, viewState, setViewState);
 
+  const isGuestUser = user?.uid === GUEST_ID || user?.isAnonymous || userProfile?.role === 'guest';
+  const isAdmin = userProfile?.role === 'admin';
+
+  // Map-aware search data
+  const [searchablePins, setSearchablePins] = useState<Record<string, Restaurant[]>>({});
+
+  const searchableMaps = useMemo(() => {
+    if (!user) {
+      return activeMap ? [activeMap] : [];
+    }
+
+    const hideDefault = !isGuestUser && !isAdmin;
+    let candidates: UserMap[] = [];
+
+    if (isAdmin) {
+      candidates = allMaps;
+    } else if (isGuestUser) {
+      if (activeMap) {
+        candidates = [activeMap];
+      }
+    } else {
+      candidates = [...userSharedMaps, ...userJoinedMaps];
+      if (!hideDefault && activeMap) {
+        candidates = [activeMap, ...candidates];
+      }
+    }
+
+    if (candidates.length === 0 && activeMap && (!hideDefault || isGuestUser || isAdmin)) {
+      candidates = [activeMap];
+    }
+
+    const seen = new Set<string>();
+    return candidates.filter((map) => {
+      if (seen.has(map.id)) return false;
+      seen.add(map.id);
+      return true;
+    });
+  }, [activeMap, allMaps, isAdmin, isGuestUser, user, userJoinedMaps, userSharedMaps]);
+
+  // Keep active map pins in the search cache
+  React.useEffect(() => {
+    if (activeMap) {
+      setSearchablePins((prev) => ({
+        ...prev,
+        [activeMap.id]: restaurants
+      }));
+    }
+  }, [activeMap, restaurants]);
+
+  // Fetch pins for other maps when needed (admin and shared)
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const fetchPins = async () => {
+      const mapsToFetch = searchableMaps.filter(
+        (map) => map.id !== activeMap?.id && !searchablePins[map.id]
+      );
+
+      for (const map of mapsToFetch) {
+        try {
+          const restaurantsRef = collection(db, 'maps', map.id, 'restaurants');
+          const snap = await getDocs(restaurantsRef);
+          const pins = snap.docs
+            .map((docSnap) => docSnap.data() as Restaurant)
+            .filter((r: any) => !Array.isArray(r.visits) || r.visits.length > 0);
+
+          if (!cancelled) {
+            setSearchablePins((prev) => ({
+              ...prev,
+              [map.id]: pins
+            }));
+          }
+        } catch (error) {
+          console.error('Failed to load map restaurants for search:', error);
+        }
+      }
+    };
+
+    fetchPins();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeMap?.id, searchableMaps, searchablePins]);
+
+  const sortedSearchableMaps = useMemo(() => {
+    const weight = (m: UserMap) => {
+      if (m.isDefault) return 0;
+      if (m.visibility === 'shared') return 1;
+      return 2;
+    };
+    return [...searchableMaps].sort((a, b) => weight(a) - weight(b));
+  }, [searchableMaps]);
+
+  const searchSources = useMemo(() => (
+    sortedSearchableMaps.map((map) => ({
+      map,
+      restaurants: searchablePins[map.id] || []
+    }))
+  ), [sortedSearchableMaps, searchablePins]);
+
   // Search hook
   const {
     searchQuery,
@@ -101,7 +202,7 @@ function App() {
     searchInputRef,
     closeSearch,
     handleSearchSelect
-  } = useSearch(restaurants);
+  } = useSearch(searchSources, { showAllWhenEmpty: isAdmin });
 
   // Filter hook
   const {
@@ -141,6 +242,7 @@ function App() {
   const [isUserDetailClosing, setIsUserDetailClosing] = useState(false);
   const [isCompactCardOpen, setIsCompactCardOpen] = useState(false);
   const [editingData, setEditingData] = useState<{ restaurant: Restaurant; visit: Visit } | null>(null);
+  const [pendingSearchSelection, setPendingSearchSelection] = useState<{ restaurant: Restaurant; map: UserMap } | null>(null);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
 
   // Tutorial handlers
@@ -238,19 +340,19 @@ function App() {
 
       if (hour >= 5 && hour < 12) {
         timePeriod = 'morning';
-        greeting = `Good morning`;
+        greeting = `Good morning ☀️`;
         greetingZh = '早上好';
       } else if (hour >= 12 && hour < 17) {
         timePeriod = 'afternoon';
-        greeting = `Good afternoon`;
+        greeting = `Good afternoon 🌤️`;
         greetingZh = '下午好';
       } else if (hour >= 17 && hour < 21) {
         timePeriod = 'evening';
-        greeting = `Good evening`;
+        greeting = `Good evening 🌆`;
         greetingZh = '晚上好';
       } else {
         timePeriod = 'night';
-        greeting = `Good night`;
+        greeting = `Good night 🌙`;
         greetingZh = '晚安';
       }
 
@@ -433,23 +535,49 @@ function App() {
     setIsAddModalClosing(false);
   }, []);
 
-  // Search select handler
-  const onSearchSelect = useCallback((restaurant: Restaurant) => {
+  // Search select handler (map-aware)
+  const onSearchSelect = useCallback((restaurant: Restaurant, map: UserMap) => {
+    closeSearch();
+    // Switch maps if needed, then select once loaded
+    if (map.id !== activeMap?.id) {
+      setPendingSearchSelection({ restaurant, map });
+      setActiveMap(map);
+      return;
+    }
+
     handleSearchSelect(restaurant, mapInstance, (r) => {
       setSelectedRestaurant(r);
       setViewState(ViewState.RESTAURANT_DETAIL);
     });
-  }, [handleSearchSelect, mapInstance, setSelectedRestaurant]);
+  }, [activeMap?.id, closeSearch, handleSearchSelect, mapInstance, setSelectedRestaurant, setActiveMap]);
+
+  // Apply pending selection when map data arrives
+  React.useEffect(() => {
+    if (!pendingSearchSelection) return;
+    if (!activeMap || activeMap.id !== pendingSearchSelection.map.id) return;
+
+    const match = restaurants.find(r => r.id === pendingSearchSelection.restaurant.id);
+    if (!match) return;
+
+    handleSearchSelect(match, mapInstance, (r) => {
+      setSelectedRestaurant(r);
+      setViewState(ViewState.RESTAURANT_DETAIL);
+    });
+    setPendingSearchSelection(null);
+  }, [activeMap, pendingSearchSelection, restaurants, handleSearchSelect, mapInstance, setSelectedRestaurant]);
 
   // Map click handler
   const handleMapClick = useCallback(() => {
     if (isFilterOpen) {
       closeFilter();
     }
+    if (isSearchFocused || searchQuery) {
+      closeSearch();
+    }
     setIsCompactCardOpen(false);
     // Reset map controls click state
     mapControlsRef.current?.resetClickState();
-  }, [isFilterOpen, closeFilter]);
+  }, [isFilterOpen, closeFilter, isSearchFocused, searchQuery, closeSearch]);
 
   // Check if we should show the map view
   const showMapView = useMemo(() => {
@@ -521,12 +649,16 @@ function App() {
               onFilterToggle={handleFilterToggle}
               closeFilter={closeFilter}
               onMenuToggle={handleMenuToggle}
+              isMenuOpen={isMenuOpen}
               notifications={notifications}
               unreadCount={unreadCount}
               onMarkAsRead={markAsRead}
               onMarkAllAsRead={markAllAsRead}
               showNotifications={!user?.isAnonymous}
-            />
+            isAdmin={isAdmin}
+            isGuest={isGuestUser}
+            currentUserUid={user?.uid}
+          />
 
             {/* Map Selector Pill */}
             {activeMap && user && (

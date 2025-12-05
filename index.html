@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>TraceBook</title>
     
+    <script>
+      // Guard for Vite client env when served raw (prevents __DEFINES__ ReferenceError)
+      window.__DEFINES__ = window.__DEFINES__ || {};
+    </script>
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#111827" />
     <meta name="mobile-web-app-capable" content="yes" />
