@@ -105,7 +105,7 @@ function App() {
     }, 150);
   }, []);
 
-  // Fetch all restaurants from all user-accessible maps
+  // Fetch all restaurants from all user-accessible maps (excluding demo map)
   useEffect(() => {
     const fetchAllRestaurants = async () => {
       if (!user || !allMaps || allMaps.length === 0) {
@@ -116,7 +116,10 @@ function App() {
       try {
         const allRestaurants: RestaurantWithMap[] = [];
         
-        for (const map of allMaps) {
+        // Filter out the demo map
+        const mapsToFetch = allMaps.filter(map => map.id !== 'guest-demo-map');
+        
+        for (const map of mapsToFetch) {
           const restaurantsRef = collection(db, 'maps', map.id, 'restaurants');
           const snapshot = await getDocs(restaurantsRef);
           

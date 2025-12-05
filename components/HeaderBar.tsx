@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Menu, Search, Filter, ChevronUp, Bell, MapPin, Map } from 'lucide-react';
+import { Menu, Search, Filter, ChevronUp, ChevronDown, ChevronRight, Bell, MapPin, Map } from 'lucide-react';
 import { Restaurant, AppNotification, UserMap } from '../types';
 import { GRADES, getGradeColor, getBestGrade } from '../utils/rating';
 import { NotificationPanel } from './NotificationPanel';
@@ -70,7 +70,21 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   const { t, language } = useLanguage();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isNotifClosing, setIsNotifClosing] = useState(false);
+  const [expandedMaps, setExpandedMaps] = useState<Set<string>>(new Set());
   const headerBarRef = useRef<HTMLDivElement>(null);
+
+  // Toggle map group expansion
+  const toggleMapExpansion = (mapId: string) => {
+    setExpandedMaps(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(mapId)) {
+        newSet.delete(mapId);
+      } else {
+        newSet.add(mapId);
+      }
+      return newSet;
+    });
+  };
 
   // Handle click outside to close search
   useEffect(() => {
@@ -161,34 +175,35 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
         {/* Logo/Title - clickable to open pin list */}
         {!isSearchOpen && !isSearchClosing && (
-          <div
+          <button
             data-tutorial="search-bar"
             onClick={handleSearchToggle}
-            className="flex-1 flex items-center gap-2 px-1 text-white cursor-pointer hover:opacity-80 transition-opacity duration-200 animate-scale-in"
+            className="flex-1 flex items-center gap-2 px-1 text-white cursor-pointer hover:opacity-80 transition-opacity duration-200 animate-scale-in select-none"
           >
-            <img src="/logo.svg" className="w-7 h-7 object-contain" alt="Logo" />
+            <img src="/logo.svg" className="w-7 h-7 object-contain pointer-events-none" alt="Logo" />
             <span className="font-bold truncate">TraceBook</span>
-          </div>
+          </button>
         )}
 
-        {/* Search Header - when list is open */}
+        {/* Search Header - when list is open, entire banner is clickable to close */}
         {(isSearchOpen || isSearchClosing) && (
-          <div data-tutorial="search" className={`flex-1 flex items-center bg-gray-700/50 rounded-lg px-3 h-[36px] ${isSearchClosing ? 'animate-scale-out' : 'animate-scale-in'}`}>
+          <button
+            data-tutorial="search"
+            onClick={(e) => {
+              e.stopPropagation();
+              closeSearch();
+            }}
+            className={`flex-1 flex items-center bg-gray-700/50 rounded-lg px-3 h-[36px] cursor-pointer hover:bg-gray-600/50 transition-colors ${isSearchClosing ? 'animate-scale-out' : 'animate-scale-in'}`}
+          >
             <MapPin size={14} className="text-blue-400 mr-2 flex-shrink-0" />
-            <span className="text-sm text-white flex-1">
+            <span className="text-sm text-white flex-1 text-left select-none">
               {language === 'zh' ? '所有地点' : 'All Locations'}
               <span className="text-gray-400 ml-2">({allRestaurantsWithMaps.length})</span>
             </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                closeSearch();
-              }}
-              className="text-gray-400 hover:text-white p-1 transition-transform duration-200"
-            >
+            <div className="text-gray-400 p-1 transition-transform duration-200">
               <ChevronUp size={16} />
-            </button>
-          </div>
+            </div>
+          </button>
         )}
 
         {/* Search, Filter, and Notification Buttons */}
@@ -247,7 +262,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
       {/* Pin List - shows when search is open */}
       {(isSearchOpen || isSearchClosing) && (
-        <div className={`mt-2 border-t border-gray-700 pt-2 max-h-72 overflow-y-auto overflow-x-hidden ${isSearchClosing ? 'animate-collapse-up' : 'animate-expand-down'}`}>
+        <div className={`mt-2 border-t border-gray-700 pt-2 h-72 overflow-y-auto overflow-x-hidden ${isSearchClosing ? 'animate-collapse-up' : 'animate-expand-down'}`}>
           {allRestaurantsWithMaps.length === 0 ? (
             <div className="text-center py-6 text-gray-500">
               <MapPin size={32} className="mx-auto mb-2 opacity-50" />
@@ -255,57 +270,83 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               <p className="text-xs mt-1">{language === 'zh' ? '添加你的第一个体验！' : 'Add your first experience!'}</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {groupedByMap.map(([mapId, { mapName, restaurants }]) => (
-                <div key={mapId}>
-                  {/* Map Section Header */}
-                  <div className="flex items-center gap-2 px-2 py-1 sticky top-0 bg-gray-800/95 backdrop-blur z-10">
-                    <Map size={12} className={mapId === activeMapId ? 'text-blue-400' : 'text-gray-500'} />
-                    <span className={`text-xs font-medium uppercase tracking-wide ${mapId === activeMapId ? 'text-blue-400' : 'text-gray-500'}`}>
-                      {mapName}
-                      {mapId === activeMapId && (
-                        <span className="ml-1 text-[10px] normal-case">
-                          ({language === 'zh' ? '当前' : 'current'})
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-xs text-gray-600">({restaurants.length})</span>
+            <div className="space-y-1">
+              {groupedByMap.filter(([mapId]) => mapId !== 'guest-demo-map').map(([mapId, { mapName, restaurants }]) => {
+                const isExpanded = expandedMaps.has(mapId);
+                return (
+                  <div key={mapId} className="rounded-lg overflow-hidden">
+                    {/* Map Section Header - Clickable */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleMapExpansion(mapId);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-700/50 transition-colors ${
+                        mapId === activeMapId ? 'bg-blue-500/10' : 'bg-gray-700/30'
+                      }`}
+                    >
+                      {/* Expand/Collapse Chevron */}
+                      <div className="transition-transform duration-200" style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                        <ChevronRight size={14} className={mapId === activeMapId ? 'text-blue-400' : 'text-gray-500'} />
+                      </div>
+                      
+                      <Map size={12} className={mapId === activeMapId ? 'text-blue-400' : 'text-gray-500'} />
+                      <span className={`text-xs font-medium uppercase tracking-wide flex-1 text-left ${mapId === activeMapId ? 'text-blue-400' : 'text-gray-400'}`}>
+                        {mapName}
+                        {mapId === activeMapId && (
+                          <span className="ml-1 text-[10px] normal-case text-blue-300">
+                            ({language === 'zh' ? '当前' : 'current'})
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-xs text-gray-500 bg-gray-700/50 px-1.5 py-0.5 rounded">
+                        {restaurants.length}
+                      </span>
+                    </button>
+                    
+                    {/* Restaurants in this map - Collapsible */}
+                    <div 
+                      className="overflow-hidden transition-all duration-200 ease-out"
+                      style={{
+                        maxHeight: isExpanded ? `${restaurants.length * 56 + 8}px` : '0px',
+                        opacity: isExpanded ? 1 : 0,
+                      }}
+                    >
+                      <div className="py-1 space-y-0.5 px-1">
+                        {restaurants.map(r => {
+                          const bestGrade = getBestGrade(r.visits);
+                          return (
+                            <button
+                              key={`${r.mapId}-${r.id}`}
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                onSelectPin(r);
+                              }}
+                              className="w-full text-left px-2 py-2 hover:bg-gray-700 rounded-lg text-sm text-gray-300 hover:text-white flex items-center gap-3 transition-colors"
+                            >
+                              {/* Grade Badge */}
+                              <div className={`w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center text-xs font-bold ${getGradeColor(bestGrade)} bg-gray-700/50`}>
+                                {bestGrade}
+                              </div>
+                              
+                              {/* Restaurant Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">{r.name}</div>
+                                <div className="text-xs text-gray-500 truncate">{r.address}</div>
+                              </div>
+                              
+                              {/* Visit Count */}
+                              <div className="flex-shrink-0 text-xs text-gray-500">
+                                {r.visits.length} {r.visits.length === 1 ? (language === 'zh' ? '次' : 'visit') : (language === 'zh' ? '次' : 'visits')}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                  
-                  {/* Restaurants in this map */}
-                  <div className="space-y-0.5">
-                    {restaurants.map(r => {
-                      const bestGrade = getBestGrade(r.visits);
-                      return (
-                        <button
-                          key={`${r.mapId}-${r.id}`}
-                          onClick={(e) => { 
-                            e.stopPropagation(); 
-                            onSelectPin(r);
-                          }}
-                          className="w-full text-left px-2 py-2 hover:bg-gray-700 rounded-lg text-sm text-gray-300 hover:text-white flex items-center gap-3 transition-colors"
-                        >
-                          {/* Grade Badge */}
-                          <div className={`w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center text-xs font-bold ${getGradeColor(bestGrade)} bg-gray-700/50`}>
-                            {bestGrade}
-                          </div>
-                          
-                          {/* Restaurant Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">{r.name}</div>
-                            <div className="text-xs text-gray-500 truncate">{r.address}</div>
-                          </div>
-                          
-                          {/* Visit Count */}
-                          <div className="flex-shrink-0 text-xs text-gray-500">
-                            {r.visits.length} {r.visits.length === 1 ? (language === 'zh' ? '次' : 'visit') : (language === 'zh' ? '次' : 'visits')}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

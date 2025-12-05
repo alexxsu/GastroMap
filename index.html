@@ -49,6 +49,12 @@
         touch-action: manipulation;
       }
       
+      /* Prevent keyboard popup on non-input interactive elements */
+      button, [role="button"] {
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      
       /* Prevent any element from causing horizontal overflow */
       *, *::before, *::after {
         box-sizing: border-box;
@@ -103,24 +109,20 @@
       @keyframes collapseUp {
         from { 
           opacity: 1; 
-          max-height: 300px;
           transform: scaleY(1);
         }
         to { 
           opacity: 0; 
-          max-height: 0;
           transform: scaleY(0);
         }
       }
       @keyframes expandDown {
         from { 
           opacity: 0; 
-          max-height: 0;
           transform: scaleY(0);
         }
         to { 
           opacity: 1; 
-          max-height: 300px;
           transform: scaleY(1);
         }
       }
