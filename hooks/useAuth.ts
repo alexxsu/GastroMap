@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, updateProfile, setPersistence, browserSessionPersistence } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, googleProvider, db, storage, signInAsGuest } from '../firebaseConfig';
 import { UserProfile, UserMap, ViewState } from '../types';
@@ -75,6 +75,14 @@ export function useAuth(): UseAuthReturn {
             updates.emailVerified = user.emailVerified;
           }
           
+          // AUTO-APPROVE: If email is verified and status is pending, auto-approve
+          if (user.emailVerified && rawProfile.status === 'pending') {
+            updates.status = 'approved';
+            updates.approvedBy = 'email_verification';
+            updates.approvedAt = new Date().toISOString();
+            console.log('Auto-approving user after email verification:', user.uid);
+          }
+          
           // Ensure email exists
           if (!rawProfile.email && user.email) {
             updates.email = user.email;
@@ -122,11 +130,13 @@ export function useAuth(): UseAuthReturn {
             email: rawProfile.email || user.email || 'unknown',
             displayName: rawProfile.displayName || user.displayName,
             photoURL: rawProfile.photoURL || user.photoURL || null,
-            status: rawProfile.status || updates.status || 'pending',
+            status: updates.status || rawProfile.status || 'pending',
             emailVerified: rawProfile.emailVerified ?? user.emailVerified ?? false,
             role: rawProfile.role || updates.role || 'user',
             createdAt: rawProfile.createdAt || updates.createdAt || new Date().toISOString(),
-            joinedMaps: Array.isArray(rawProfile.joinedMaps) ? rawProfile.joinedMaps : []
+            joinedMaps: Array.isArray(rawProfile.joinedMaps) ? rawProfile.joinedMaps : [],
+            approvedBy: updates.approvedBy || rawProfile.approvedBy,
+            approvedAt: updates.approvedAt || rawProfile.approvedAt
           };
           
           setUserProfile(normalizedProfile);
@@ -188,6 +198,30 @@ export function useAuth(): UseAuthReturn {
       };
       await setDoc(userRef, newProfile);
 
+      // Notify all admins about new user signup
+      try {
+        const adminsQuery = query(collection(db, 'users'), where('role', '==', 'admin'));
+        const adminsSnapshot = await getDocs(adminsQuery);
+        const notificationsRef = collection(db, 'notifications');
+        
+        const notificationPromises = adminsSnapshot.docs.map(adminDoc => 
+          addDoc(notificationsRef, {
+            recipientUid: adminDoc.id,
+            type: 'new_user_signup',
+            actorName: displayName,
+            message: `New user signed up: ${displayName} (${email})`,
+            read: false,
+            createdAt: serverTimestamp(),
+          })
+        );
+        
+        await Promise.all(notificationPromises);
+        console.log(`Notified ${adminsSnapshot.docs.length} admin(s) about new signup`);
+      } catch (notifyError) {
+        console.error('Failed to notify admins:', notifyError);
+        // Don't throw - user signup succeeded, notification is secondary
+      }
+
     } catch (error: any) {
       console.error("Sign up failed", error);
       if (error.code === 'auth/email-already-in-use') {
@@ -209,14 +243,26 @@ export function useAuth(): UseAuthReturn {
       // Check email verification
       const needsVerification = !firebaseUser.emailVerified;
 
-      // Check admin approval
+      // Check approval status
       const userRef = doc(db, "users", firebaseUser.uid);
       const userSnap = await getDoc(userRef);
       let needsApproval = true;
 
       if (userSnap.exists()) {
         const profile = userSnap.data() as UserProfile;
-        needsApproval = profile.status !== 'approved';
+        
+        // If email is verified but status is still pending, auto-approve now
+        if (firebaseUser.emailVerified && profile.status === 'pending') {
+          await updateDoc(userRef, { 
+            status: 'approved',
+            emailVerified: true,
+            approvedBy: 'email_verification',
+            approvedAt: new Date().toISOString()
+          });
+          needsApproval = false;
+        } else {
+          needsApproval = profile.status !== 'approved';
+        }
       }
 
       return { needsVerification, needsApproval };
@@ -321,11 +367,25 @@ export function useAuth(): UseAuthReturn {
       
       if (userSnap.exists()) {
         const userData = userSnap.data() as UserProfile;
+        const updates: Partial<UserProfile> = {};
         
         // Update emailVerified in Firestore if changed
         if (userData.emailVerified !== emailVerified) {
-          await updateDoc(userRef, { emailVerified });
-          userData.emailVerified = emailVerified;
+          updates.emailVerified = emailVerified;
+        }
+        
+        // AUTO-APPROVE: If email is now verified and status is pending, auto-approve
+        if (emailVerified && userData.status === 'pending') {
+          updates.status = 'approved';
+          updates.approvedBy = 'email_verification';
+          updates.approvedAt = new Date().toISOString();
+          console.log('Auto-approving user after email verification (refresh):', user.uid);
+        }
+        
+        // Apply updates if any
+        if (Object.keys(updates).length > 0) {
+          await updateDoc(userRef, updates);
+          Object.assign(userData, updates);
         }
         
         setUserProfile(userData);

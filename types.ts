@@ -32,9 +32,11 @@ export interface UserProfile {
   photoURL?: string | null;
   status: 'pending' | 'approved' | 'rejected';
   emailVerified?: boolean;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'guest';
   createdAt: string;
   joinedMaps?: string[]; // Array of map IDs user has joined
+  approvedBy?: 'email_verification' | 'admin'; // How user was approved
+  approvedAt?: string; // When user was approved
 }
 
 // Global declaration for Google Maps
@@ -225,6 +227,8 @@ export type NotificationType =
   | 'member_left'        // Someone left a shared map you're in
   | 'member_removed'     // You were removed from a shared map
   | 'join_approved'      // Your account was approved
+  | 'admin_approved'     // Your account was manually approved by admin
+  | 'new_user_signup'    // Admin notification: new user signed up
   | 'post_added'         // Someone added a post to your shared map
   | 'post_deleted'       // Someone deleted a post from your shared map
   | 'map_invite'         // You were invited to a map (future feature)
