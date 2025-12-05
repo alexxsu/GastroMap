@@ -18,23 +18,35 @@ export const MapControls: React.FC<MapControlsProps> = ({
     return 'Switch to Satellite View';
   };
 
+  const handleZoomClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    onZoomToMunicipality();
+    // Remove focus to clear visual feedback
+    e.currentTarget.blur();
+  };
+
+  const handleMapTypeClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    onToggleMapType();
+    // Remove focus to clear visual feedback
+    e.currentTarget.blur();
+  };
+
   return (
     <div className="absolute bottom-24 right-4 z-10 flex flex-col gap-3 pointer-events-auto">
       <button
-        onClick={onZoomToMunicipality}
-        className="bg-gray-800/90 backdrop-blur border border-gray-700 p-3 rounded-full shadow-lg text-white hover:bg-gray-700 transition group"
+        onClick={handleZoomClick}
+        className="bg-gray-800/90 backdrop-blur border border-gray-700 p-3 rounded-full shadow-lg text-white hover:bg-gray-700 active:bg-gray-600 transition group focus:outline-none"
         title="Zoom to My City"
       >
-        <Crosshair size={24} className="group-hover:text-blue-400 transition" />
+        <Crosshair size={24} className="group-hover:text-blue-400 group-active:text-blue-300 transition" />
       </button>
       <button
-        onClick={onToggleMapType}
-        className={`bg-gray-800/90 backdrop-blur border p-3 rounded-full shadow-lg text-white transition group
+        onClick={handleMapTypeClick}
+        className={`bg-gray-800/90 backdrop-blur border p-3 rounded-full shadow-lg text-white transition group focus:outline-none active:bg-gray-600
           ${mapType !== 'roadmap' ? 'border-blue-500' : 'border-gray-700 hover:bg-gray-700'}
         `}
         title={getMapTypeTitle()}
       >
-        <Map size={24} className="group-hover:text-blue-400 transition" />
+        <Map size={24} className="group-hover:text-blue-400 group-active:text-blue-300 transition" />
       </button>
     </div>
   );

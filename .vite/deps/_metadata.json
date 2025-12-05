@@ -1,8 +1,100 @@
 {
-  "hash": "ff2f6770",
+  "hash": "604e4e41",
   "configHash": "35199c55",
-  "lockfileHash": "aee6dc8d",
-  "browserHash": "842dc0d3",
-  "optimized": {},
-  "chunks": {}
+  "lockfileHash": "c5050b8f",
+  "browserHash": "2cda9490",
+  "optimized": {
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "9048db25",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "0bbcb52e",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "7166af25",
+      "needsInterop": true
+    },
+    "firebase/app": {
+      "src": "../../node_modules/firebase/app/dist/esm/index.esm.js",
+      "file": "firebase_app.js",
+      "fileHash": "e3f2dc19",
+      "needsInterop": false
+    },
+    "firebase/auth": {
+      "src": "../../node_modules/firebase/auth/dist/esm/index.esm.js",
+      "file": "firebase_auth.js",
+      "fileHash": "e4a34860",
+      "needsInterop": false
+    },
+    "firebase/firestore": {
+      "src": "../../node_modules/firebase/firestore/dist/esm/index.esm.js",
+      "file": "firebase_firestore.js",
+      "fileHash": "f7c86891",
+      "needsInterop": false
+    },
+    "firebase/storage": {
+      "src": "../../node_modules/firebase/storage/dist/esm/index.esm.js",
+      "file": "firebase_storage.js",
+      "fileHash": "3653f461",
+      "needsInterop": false
+    },
+    "lucide-react": {
+      "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
+      "file": "lucide-react.js",
+      "fileHash": "4f6f1011",
+      "needsInterop": false
+    },
+    "@googlemaps/markerclusterer": {
+      "src": "../../node_modules/@googlemaps/markerclusterer/dist/index.esm.mjs",
+      "file": "@googlemaps_markerclusterer.js",
+      "fileHash": "66221afb",
+      "needsInterop": false
+    },
+    "html2canvas": {
+      "src": "../../node_modules/html2canvas/dist/html2canvas.esm.js",
+      "file": "html2canvas.js",
+      "fileHash": "9eb9ff41",
+      "needsInterop": false
+    },
+    "heic2any": {
+      "src": "../../node_modules/heic2any/dist/heic2any.js",
+      "file": "heic2any.js",
+      "fileHash": "15766646",
+      "needsInterop": true
+    },
+    "react-dom": {
+      "src": "../../node_modules/react-dom/index.js",
+      "file": "react-dom.js",
+      "fileHash": "97fcf71b",
+      "needsInterop": true
+    },
+    "exifr": {
+      "src": "../../node_modules/exifr/dist/full.esm.mjs",
+      "file": "exifr.js",
+      "fileHash": "18c3cb58",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-K7US7FQN": {
+      "file": "chunk-K7US7FQN.js"
+    },
+    "chunk-5CMO42JT": {
+      "file": "chunk-5CMO42JT.js"
+    },
+    "chunk-QTVD6AVW": {
+      "file": "chunk-QTVD6AVW.js"
+    },
+    "chunk-PR4QN5HX": {
+      "file": "chunk-PR4QN5HX.js"
+    }
+  }
 }

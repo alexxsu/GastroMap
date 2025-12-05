@@ -9,7 +9,8 @@ import {
   useRestaurants,
   useSearch,
   useFilter,
-  useMapControls
+  useMapControls,
+  useNotifications
 } from './hooks';
 
 // Components
@@ -46,7 +47,8 @@ function App() {
     resendVerificationEmail,
     loginAsGuest,
     logout,
-    refreshStatus
+    refreshStatus,
+    updateUserProfile
   } = useAuth();
 
   // View state
@@ -65,6 +67,16 @@ function App() {
     leaveSharedMap,
     kickMember
   } = useMaps(user, userProfile);
+
+  // Notifications hook
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    createNotification,
+    notifyMapMembers
+  } = useNotifications(user);
 
   // Restaurants hook
   const {
@@ -146,6 +158,37 @@ function App() {
       }
     }
   }, [user, userProfile]);
+
+  // Welcome notification - send when user first joins the app
+  const [hasShownWelcome, setHasShownWelcome] = React.useState(false);
+  React.useEffect(() => {
+    const sendWelcomeNotification = async () => {
+      if (!user || user.isAnonymous || hasShownWelcome) return;
+      if (!userProfile || userProfile.status !== 'approved') return;
+      
+      // Check localStorage to see if we've already sent a welcome notification
+      const welcomeKey = `welcome_sent_${user.uid}`;
+      const alreadySent = localStorage.getItem(welcomeKey);
+      
+      if (!alreadySent) {
+        try {
+          await createNotification({
+            recipientUid: user.uid,
+            type: 'welcome',
+            message: `Welcome to TraceBook, ${user.displayName || 'friend'}! Start exploring and adding your food memories.`
+          });
+          localStorage.setItem(welcomeKey, 'true');
+          setHasShownWelcome(true);
+        } catch (error) {
+          console.error('Failed to send welcome notification:', error);
+        }
+      } else {
+        setHasShownWelcome(true);
+      }
+    };
+
+    sendWelcomeNotification();
+  }, [user, userProfile, hasShownWelcome, createNotification]);
 
   // Menu handlers
   const closeMenu = useCallback(() => {
@@ -376,6 +419,11 @@ function App() {
               onFilterToggle={handleFilterToggle}
               closeFilter={closeFilter}
               onMenuToggle={handleMenuToggle}
+              notifications={notifications}
+              unreadCount={unreadCount}
+              onMarkAsRead={markAsRead}
+              onMarkAllAsRead={markAllAsRead}
+              showNotifications={!user?.isAnonymous}
             />
 
             {/* Map Selector Pill */}
@@ -438,7 +486,10 @@ function App() {
           onClose={closeMenu}
           onOpenUserDetail={() => setIsUserDetailOpen(true)}
           onViewStats={() => setViewState(ViewState.STATS)}
-          onManageMaps={() => setViewState(ViewState.MAP_MANAGEMENT)}
+          onManageMaps={() => {
+            setIsCompactCardOpen(false);
+            setViewState(ViewState.MAP_MANAGEMENT);
+          }}
           onViewInfo={() => setViewState(ViewState.INFO)}
           onSiteManagement={() => setViewState(ViewState.SITE_MANAGEMENT)}
         />
@@ -454,6 +505,7 @@ function App() {
           onClose={closeUserDetail}
           onViewHistory={() => setViewState(ViewState.USER_HISTORY)}
           onLogout={handleLogout}
+          onUpdateProfile={updateUserProfile}
         />
       )}
 

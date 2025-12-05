@@ -5,6 +5,7 @@ import { UserMap } from '../types';
 interface SimpleUser {
   uid: string;
   displayName?: string | null;
+  email?: string | null;
 }
 
 /**
@@ -28,6 +29,7 @@ export async function ensureDefaultMapForUser(user: SimpleUser): Promise<UserMap
       id: docSnap.id,
       ownerUid: data.ownerUid,
       ownerDisplayName: data.ownerDisplayName,
+      ownerEmail: data.ownerEmail,
       name: data.name,
       visibility: data.visibility,
       isDefault: data.isDefault,
@@ -36,11 +38,13 @@ export async function ensureDefaultMapForUser(user: SimpleUser): Promise<UserMap
     };
   }
 
-  const ownerDisplayName = user.displayName ?? 'Anonymous';
+  const ownerDisplayName = user.displayName || user.email || user.uid;
+  const ownerEmail = user.email || undefined;
 
   const result = await addDoc(mapsRef, {
     ownerUid: user.uid,
     ownerDisplayName,
+    ownerEmail,
     name: 'Default Map',
     visibility: 'private',
     isDefault: true,
@@ -52,6 +56,7 @@ export async function ensureDefaultMapForUser(user: SimpleUser): Promise<UserMap
     id: result.id,
     ownerUid: user.uid,
     ownerDisplayName,
+    ownerEmail,
     name: 'Default Map',
     visibility: 'private',
     isDefault: true,

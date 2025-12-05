@@ -108,7 +108,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <span className="text-blue-200 text-sm font-medium tracking-wide">Log in to post and edit experiences</span>
           </div>
 
-          <div className="space-y-3">
+          {/* Section 1: Google Sign In */}
+          <div className="mb-4">
             <button
               onClick={onLogin}
               className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-900 font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-black/20 transform hover:scale-[1.02] active:scale-95"
@@ -121,7 +122,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </svg>
               Sign in with Google
             </button>
+          </div>
 
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-gray-600"></div>
+            <span className="text-gray-500 text-sm">or</span>
+            <div className="flex-1 h-px bg-gray-600"></div>
+          </div>
+
+          {/* Section 2: Email Sign In & Create Account */}
+          <div className="space-y-3 mb-4">
             <button
               onClick={() => { resetForm(); setMode('signin'); }}
               className="w-full flex items-center justify-center gap-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-black/20 transform hover:scale-[1.02] active:scale-95"
@@ -139,12 +150,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </button>
           </div>
 
-          <button
-            onClick={onGuestLogin}
-            className="mt-6 text-sm text-gray-500 hover:text-white transition underline decoration-transparent hover:decoration-white underline-offset-4"
-          >
-            or continue as a guest to view
-          </button>
+          {/* Section 3: Guest Login */}
+          <div className="pt-4 border-t border-gray-700">
+            <button
+              onClick={onGuestLogin}
+              className="w-full text-sm text-gray-400 hover:text-white transition py-2"
+            >
+              Continue as guest to view
+            </button>
+          </div>
         </div>
       </div>
     );

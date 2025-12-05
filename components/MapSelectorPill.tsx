@@ -19,6 +19,22 @@ interface MapSelectorPillProps {
   filteredCount: number;
 }
 
+// Helper to get owner display name with fallbacks
+const getOwnerDisplayName = (map: UserMap): string => {
+  // First try displayName if it's valid (not Anonymous/Unknown)
+  if (map.ownerDisplayName &&
+      map.ownerDisplayName !== 'Anonymous' &&
+      map.ownerDisplayName !== 'Unknown') {
+    return map.ownerDisplayName;
+  }
+  // Then try email
+  if (map.ownerEmail) {
+    return map.ownerEmail;
+  }
+  // Fallback to just showing the map name (no owner prefix)
+  return map.name;
+};
+
 export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
   activeMap,
   user,
@@ -88,7 +104,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
             ) : activeMap.ownerUid === user?.uid ? (
               <span className="text-purple-400">Shared Map (Owner)</span>
             ) : (
-              <span className="text-green-400">Shared Map by {activeMap.ownerDisplayName}</span>
+              <span className="text-green-400">Shared Map by {getOwnerDisplayName(activeMap)}</span>
             )}
           </div>
 
@@ -132,7 +148,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                   <optgroup label="Shared Maps (Joined)">
                     {userJoinedMaps.map((m) => (
                       <option key={m.id} value={m.id}>
-                        🌐 {m.name} ({m.ownerDisplayName})
+                        🌐 {m.name} ({getOwnerDisplayName(m)})
                       </option>
                     ))}
                   </optgroup>
@@ -155,7 +171,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
               >
                 {allMaps.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {(m.ownerDisplayName || m.ownerUid) + ' – ' + m.name}
+                    {getOwnerDisplayName(m) + ' – ' + m.name}
                   </option>
                 ))}
               </select>
@@ -176,7 +192,10 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
           {/* Manage Maps Button - only for non-anonymous users */}
           {!user?.isAnonymous && (
             <button
-              onClick={onManageMaps}
+              onClick={() => {
+                setIsCompactCardOpen(false);
+                onManageMaps();
+              }}
               className="mt-2 pt-2 border-t border-gray-700 w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-gray-400 hover:text-white transition"
             >
               <Settings size={12} />

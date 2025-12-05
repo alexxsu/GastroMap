@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Plus, Users, Lock, Copy, Check, LogIn, Globe, User, Settings, Crown, UserMinus, LogOut as LeaveIcon } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, Plus, Users, Lock, Copy, Check, LogIn, Globe, User, Settings, Crown, UserMinus, LogOut as LeaveIcon, Info } from 'lucide-react';
 import { UserMap, MapMember } from '../types';
 
 interface MapManagementModalProps {
@@ -92,7 +93,7 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
       setIsCreating(false);
       setIsCreatingClosing(false);
       setNewMapName('');
-    }, 200);
+    }, 300);
   };
 
   const openJoinForm = () => {
@@ -107,7 +108,7 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
       setIsJoiningClosing(false);
       setJoinCode('');
       setJoinError(null);
-    }, 200);
+    }, 300);
   };
 
   const handleClose = () => {
@@ -195,20 +196,23 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
       switch (type) {
         case 'default':
           return {
-            icon: <Lock size={18} className={isActive ? 'text-green-400' : 'text-blue-400'} />,
-            bgColor: isActive ? 'bg-green-500/20 ring-2 ring-green-500/50' : 'bg-blue-500/20',
+            icon: <Lock size={18} className="text-blue-400" />,
+            bgColor: 'bg-blue-500/20',
+            activeBg: 'bg-blue-600/20 border border-blue-500/50',
             label: 'Private'
           };
         case 'created':
           return {
-            icon: <Users size={18} className={isActive ? 'text-green-400' : 'text-purple-400'} />,
-            bgColor: isActive ? 'bg-green-500/20 ring-2 ring-green-500/50' : 'bg-purple-500/20',
+            icon: <Users size={18} className="text-purple-400" />,
+            bgColor: 'bg-purple-500/20',
+            activeBg: 'bg-purple-600/20 border border-purple-500/50',
             label: 'Shared (Owner)'
           };
         case 'joined':
           return {
-            icon: <Globe size={18} className={isActive ? 'text-green-400' : 'text-green-400'} />,
-            bgColor: isActive ? 'bg-green-500/20 ring-2 ring-green-500/50' : 'bg-green-500/20',
+            icon: <Globe size={18} className="text-green-400" />,
+            bgColor: 'bg-green-500/20',
+            activeBg: 'bg-green-600/20 border border-green-500/50',
             label: 'Shared (Member)'
           };
       }
@@ -222,7 +226,7 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
         <div
           className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200
             ${isActive
-              ? 'bg-blue-600/20 border border-blue-500/50'
+              ? styles.activeBg
               : 'bg-gray-700/50 border border-transparent hover:bg-gray-700'}
           `}
         >
@@ -246,21 +250,8 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
               </div>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-xs text-gray-400">{styles.label}</span>
-                {map.shareCode && type === 'created' && (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopyCode(map.shareCode!);
-                    }}
-                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition cursor-pointer"
-                  >
-                    <span className="font-mono bg-gray-600 px-1.5 py-0.5 rounded">{map.shareCode}</span>
-                    {copiedCode === map.shareCode ? (
-                      <Check size={12} className="text-green-400" />
-                    ) : (
-                      <Copy size={12} />
-                    )}
-                  </span>
+                {map.shareCode && (type === 'created' || type === 'joined') && (
+                  <span className="font-mono text-xs bg-gray-600 text-gray-300 px-1.5 py-0.5 rounded">{map.shareCode}</span>
                 )}
                 {type === 'joined' && map.ownerDisplayName && (
                   <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -272,21 +263,40 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
             </div>
           </button>
 
-          {/* Settings gear inside the box for created and joined maps */}
-          {(type === 'created' || type === 'joined') && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleSettings(map.id);
-              }}
-              className={`p-2 rounded-lg transition-all duration-200 ${
-                isSettingsOpen 
-                  ? 'bg-gray-600 text-white rotate-90' 
-                  : 'bg-gray-600/50 text-gray-400 hover:text-white hover:bg-gray-600'
-              }`}
-            >
-              <Settings size={16} />
-            </button>
+          {/* Copy code and Settings/Info button for created and joined maps */}
+          {(type === 'created' || type === 'joined') && map.shareCode && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyCode(map.shareCode!);
+                }}
+                className="p-2 rounded-lg transition-all duration-200 bg-gray-600/50 text-gray-400 hover:text-white hover:bg-gray-600"
+                title="Copy share code"
+              >
+                {copiedCode === map.shareCode ? (
+                  <Check size={16} className="text-green-400" />
+                ) : (
+                  <Copy size={16} />
+                )}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleSettings(map.id);
+                }}
+                className={`p-2 rounded-lg transition-all duration-200 ${
+                  isSettingsOpen
+                    ? type === 'created' 
+                      ? 'bg-gray-600 text-white rotate-90'
+                      : 'bg-gray-600 text-white'
+                    : 'bg-gray-600/50 text-gray-400 hover:text-white hover:bg-gray-600'
+                }`}
+                title={type === 'created' ? 'Settings' : 'Map Info'}
+              >
+                {type === 'created' ? <Settings size={16} /> : <Info size={16} />}
+              </button>
+            </div>
           )}
         </div>
 
@@ -459,11 +469,11 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
     );
   };
 
-  return (
+  const modal = (
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/60 z-[100] transition-opacity duration-200 ${isClosing ? 'opacity-0' : 'animate-fade-in'}`}
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] transition-opacity duration-200 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
         onClick={handleClose}
       />
 
@@ -494,7 +504,7 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
             
             {/* Section 1: Default Map */}
             <div>
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+              <h3 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2">
                 <Lock size={12} />
                 {isGuest ? 'Demo Map' : 'Your Default Map'}
               </h3>
@@ -510,7 +520,7 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
             {/* Section 2: Shared Maps You Created - hide for guests */}
             {!isGuest && (
               <div>
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-2">
                   <Users size={12} />
                   Shared Maps You Created ({sharedMaps.length}/{maxSharedMaps})
                 </h3>
@@ -522,62 +532,70 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
                   )}
 
                   {/* Create Map Button/Form - under created maps */}
-                  {isCreating ? (
+                  <div className="mt-2">
+                    {/* Form container with smooth height animation */}
                     <div 
-                      className={`space-y-3 mt-2 p-3 bg-gray-700/50 rounded-xl border border-gray-600 transition-all duration-200 ${
-                        isCreatingClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-                      }`}
+                      className="overflow-hidden transition-all duration-300 ease-out"
                       style={{ 
-                        maxHeight: isCreatingClosing ? '0px' : '200px',
-                        padding: isCreatingClosing ? '0px' : undefined,
-                        marginTop: isCreatingClosing ? '0px' : undefined,
-                        borderWidth: isCreatingClosing ? '0px' : undefined,
+                        maxHeight: isCreating && !isCreatingClosing ? '200px' : '0px',
+                        opacity: isCreating && !isCreatingClosing ? 1 : 0,
+                      }}
+                    >
+                      <div className="space-y-3 p-3 bg-gray-700/50 rounded-xl border border-gray-600 mb-2">
+                        <input
+                          type="text"
+                          value={newMapName}
+                          onChange={(e) => setNewMapName(e.target.value.slice(0, 25))}
+                          placeholder="Enter map name..."
+                          className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          maxLength={25}
+                          autoFocus={isCreating}
+                        />
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{newMapName.length}/25 characters</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={closeCreateForm}
+                            className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleCreate}
+                            disabled={!newMapName.trim() || isSubmitting}
+                            className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded-lg transition"
+                          >
+                            {isSubmitting ? 'Creating...' : 'Create'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Button - always in DOM, animated visibility */}
+                    <div 
+                      className="transition-all duration-300 ease-out"
+                      style={{ 
+                        opacity: !isCreating ? 1 : 0,
+                        maxHeight: !isCreating ? '40px' : '0px',
                         overflow: 'hidden'
                       }}
                     >
-                      <input
-                        type="text"
-                        value={newMapName}
-                        onChange={(e) => setNewMapName(e.target.value.slice(0, 25))}
-                        placeholder="Enter map name..."
-                        className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        maxLength={25}
-                        autoFocus
-                      />
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>{newMapName.length}/25 characters</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={closeCreateForm}
-                          className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleCreate}
-                          disabled={!newMapName.trim() || isSubmitting}
-                          className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded-lg transition"
-                        >
-                          {isSubmitting ? 'Creating...' : 'Create'}
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => canCreateMore && openCreateForm()}
+                        disabled={!canCreateMore}
+                        className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all duration-200 border text-sm
+                          ${canCreateMore
+                            ? 'bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 border-purple-500/20'
+                            : 'bg-gray-700/30 text-gray-500 border-gray-600 cursor-not-allowed'}
+                        `}
+                      >
+                        <Plus size={14} />
+                        <span>Create Shared Map</span>
+                        {!canCreateMore && <span className="text-xs text-gray-500">(Limit reached)</span>}
+                      </button>
                     </div>
-                  ) : (
-                    <button
-                      onClick={() => canCreateMore && openCreateForm()}
-                      disabled={!canCreateMore}
-                      className={`w-full flex items-center justify-center gap-2 py-2.5 mt-2 rounded-xl transition-all duration-200 border
-                        ${canCreateMore
-                          ? 'bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border-purple-500/30'
-                          : 'bg-gray-700/30 text-gray-500 border-gray-600 cursor-not-allowed'}
-                      `}
-                    >
-                      <Plus size={16} />
-                      <span>Create Shared Map</span>
-                      {!canCreateMore && <span className="text-xs text-gray-500">(Limit reached)</span>}
-                    </button>
-                  )}
+                  </div>
                 </div>
               </div>
             )}
@@ -585,7 +603,7 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
             {/* Section 3: Shared Maps You Joined - hide for guests */}
             {!isGuest && (
               <div>
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <h3 className="text-xs font-bold text-green-400 uppercase tracking-wider mb-2 flex items-center gap-2">
                   <Globe size={12} />
                   Shared Maps You Joined ({joinedMaps.length}/{maxSharedMaps})
                 </h3>
@@ -597,74 +615,82 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
                   )}
 
                   {/* Join Map Button/Form - under joined maps */}
-                  {isJoining ? (
+                  <div className="mt-2">
+                    {/* Form container with smooth height animation */}
                     <div 
-                      className={`space-y-3 mt-2 p-3 bg-gray-700/50 rounded-xl border border-gray-600 transition-all duration-200 ${
-                        isJoiningClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-                      }`}
+                      className="overflow-hidden transition-all duration-300 ease-out"
                       style={{ 
-                        maxHeight: isJoiningClosing ? '0px' : '200px',
-                        padding: isJoiningClosing ? '0px' : undefined,
-                        marginTop: isJoiningClosing ? '0px' : undefined,
-                        borderWidth: isJoiningClosing ? '0px' : undefined,
+                        maxHeight: isJoining && !isJoiningClosing ? '220px' : '0px',
+                        opacity: isJoining && !isJoiningClosing ? 1 : 0,
+                      }}
+                    >
+                      <div className="space-y-3 p-3 bg-gray-700/50 rounded-xl border border-gray-600 mb-2">
+                        <div>
+                          <label className="text-xs text-gray-400 block mb-1">Enter 4-digit map code</label>
+                          <input
+                            type="text"
+                            value={joinCode}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                              setJoinCode(val);
+                              setJoinError(null);
+                            }}
+                            placeholder="0000"
+                            className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-center font-mono text-xl tracking-widest placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            maxLength={4}
+                            autoFocus={isJoining}
+                          />
+                        </div>
+                        {joinError && (
+                          <p className="text-red-400 text-xs text-center">{joinError}</p>
+                        )}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={closeJoinForm}
+                            className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleJoin}
+                            disabled={joinCode.length !== 4 || isSubmitting}
+                            className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded-lg transition flex items-center justify-center gap-2"
+                          >
+                            {isSubmitting ? 'Joining...' : (
+                              <>
+                                <LogIn size={16} />
+                                Join
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Button - always in DOM, animated visibility */}
+                    <div 
+                      className="transition-all duration-300 ease-out"
+                      style={{ 
+                        opacity: !isJoining ? 1 : 0,
+                        maxHeight: !isJoining ? '40px' : '0px',
                         overflow: 'hidden'
                       }}
                     >
-                      <div>
-                        <label className="text-xs text-gray-400 block mb-1">Enter 4-digit map code</label>
-                        <input
-                          type="text"
-                          value={joinCode}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                            setJoinCode(val);
-                            setJoinError(null);
-                          }}
-                          placeholder="0000"
-                          className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-center font-mono text-xl tracking-widest placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
-                          maxLength={4}
-                          autoFocus
-                        />
-                      </div>
-                      {joinError && (
-                        <p className="text-red-400 text-xs text-center">{joinError}</p>
-                      )}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={closeJoinForm}
-                          className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleJoin}
-                          disabled={joinCode.length !== 4 || isSubmitting}
-                          className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded-lg transition flex items-center justify-center gap-2"
-                        >
-                          {isSubmitting ? 'Joining...' : (
-                            <>
-                              <LogIn size={16} />
-                              Join
-                            </>
-                          )}
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => canJoinMore && openJoinForm()}
+                        disabled={!canJoinMore}
+                        className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all duration-200 border text-sm
+                          ${canJoinMore
+                            ? 'bg-green-600/10 hover:bg-green-600/20 text-green-400 border-green-500/20'
+                            : 'bg-gray-700/30 text-gray-500 border-gray-600 cursor-not-allowed'}
+                        `}
+                      >
+                        <LogIn size={14} />
+                        <span>Join a Shared Map</span>
+                        {!canJoinMore && <span className="text-xs text-gray-500">(Limit reached)</span>}
+                      </button>
                     </div>
-                  ) : (
-                    <button
-                      onClick={() => canJoinMore && openJoinForm()}
-                      disabled={!canJoinMore}
-                      className={`w-full flex items-center justify-center gap-2 py-2.5 mt-2 rounded-xl transition-all duration-200 border
-                        ${canJoinMore
-                          ? 'bg-green-600/20 hover:bg-green-600/30 text-green-300 border-green-500/30'
-                          : 'bg-gray-700/30 text-gray-500 border-gray-600 cursor-not-allowed'}
-                      `}
-                    >
-                      <LogIn size={16} />
-                      <span>Join a Shared Map</span>
-                      {!canJoinMore && <span className="text-xs text-gray-500">(Limit reached)</span>}
-                    </button>
-                  )}
+                  </div>
                 </div>
               </div>
             )}
@@ -682,6 +708,8 @@ const MapManagementModal: React.FC<MapManagementModalProps> = ({
       </div>
     </>
   );
+
+  return createPortal(modal, document.body);
 };
 
 export default MapManagementModal;

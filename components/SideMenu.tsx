@@ -76,7 +76,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
               </div>
             )}
             <div className="text-left">
-              <span className="font-medium block">{user?.displayName || 'User'}</span>
+              <span className="font-medium block">{user?.displayName || userProfile?.displayName || 'User'}</span>
               <span className="text-xs text-gray-500">View your profile</span>
             </div>
           </button>

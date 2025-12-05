@@ -48,6 +48,7 @@ export function useMaps(user: AppUser | null, userProfile: UserProfile | null): 
         const map = await ensureDefaultMapForUser({
           uid: user.uid,
           displayName: user.displayName,
+          email: user.email,
         });
         setActiveMap(map);
       } catch (err) {
@@ -71,6 +72,8 @@ export function useMaps(user: AppUser | null, userProfile: UserProfile | null): 
           id: docSnap.id,
           ownerUid: d.ownerUid,
           ownerDisplayName: d.ownerDisplayName,
+          ownerEmail: d.ownerEmail,
+          ownerPhotoURL: d.ownerPhotoURL,
           name: d.name,
           visibility: d.visibility,
           isDefault: d.isDefault,
@@ -110,6 +113,8 @@ export function useMaps(user: AppUser | null, userProfile: UserProfile | null): 
           id: docSnap.id,
           ownerUid: d.ownerUid,
           ownerDisplayName: d.ownerDisplayName,
+          ownerEmail: d.ownerEmail,
+          ownerPhotoURL: d.ownerPhotoURL,
           name: d.name,
           visibility: d.visibility,
           isDefault: d.isDefault,
@@ -159,6 +164,8 @@ export function useMaps(user: AppUser | null, userProfile: UserProfile | null): 
           id: docSnap.id,
           ownerUid: d.ownerUid,
           ownerDisplayName: d.ownerDisplayName,
+          ownerEmail: d.ownerEmail,
+          ownerPhotoURL: d.ownerPhotoURL,
           name: d.name,
           visibility: d.visibility,
           isDefault: d.isDefault,
@@ -211,7 +218,7 @@ export function useMaps(user: AppUser | null, userProfile: UserProfile | null): 
 
     const creatorMemberInfo = {
       uid: user.uid,
-      displayName: user.displayName || 'Unknown',
+      displayName: user.displayName || user.email || user.uid,
       photoURL: user.photoURL,
       joinedAt: new Date().toISOString()
     };
@@ -219,7 +226,9 @@ export function useMaps(user: AppUser | null, userProfile: UserProfile | null): 
     const newMap = {
       id: mapId,
       ownerUid: user.uid,
-      ownerDisplayName: user.displayName || 'Unknown',
+      ownerDisplayName: user.displayName || user.email || user.uid,
+      ownerEmail: user.email || undefined,
+      ownerPhotoURL: user.photoURL || null,
       name: name,
       visibility: 'shared',
       isDefault: false,
@@ -272,7 +281,7 @@ export function useMaps(user: AppUser | null, userProfile: UserProfile | null): 
     const mapRef = doc(db, 'maps', foundMapId);
     const newMemberInfo = {
       uid: user.uid,
-      displayName: user.displayName || 'Unknown',
+      displayName: user.displayName || user.email || user.uid,
       photoURL: user.photoURL,
       joinedAt: new Date().toISOString()
     };
