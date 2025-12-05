@@ -35,6 +35,7 @@ export interface UserProfile {
   role: 'user' | 'admin';
   createdAt: string;
   joinedMaps?: string[]; // Array of map IDs user has joined
+  provider?: string; // Login provider: 'google.com', 'password', etc.
 }
 
 // Global declaration for Google Maps

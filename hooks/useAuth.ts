@@ -126,7 +126,8 @@ export function useAuth(): UseAuthReturn {
             emailVerified: rawProfile.emailVerified ?? user.emailVerified ?? false,
             role: rawProfile.role || updates.role || 'user',
             createdAt: rawProfile.createdAt || updates.createdAt || new Date().toISOString(),
-            joinedMaps: Array.isArray(rawProfile.joinedMaps) ? rawProfile.joinedMaps : []
+            joinedMaps: Array.isArray(rawProfile.joinedMaps) ? rawProfile.joinedMaps : [],
+            provider: rawProfile.provider || 'google.com'
           };
           
           setUserProfile(normalizedProfile);
@@ -138,7 +139,8 @@ export function useAuth(): UseAuthReturn {
             status: 'pending',
             emailVerified: user.emailVerified,
             role: 'user',
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            provider: 'google.com'
           };
           await setDoc(userRef, newProfile);
           setUserProfile(newProfile);
@@ -157,7 +159,13 @@ export function useAuth(): UseAuthReturn {
 
   const login = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      // Update provider in Firestore
+      const userRef = doc(db, "users", result.user.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        await updateDoc(userRef, { provider: 'google.com' });
+      }
     } catch (error) {
       console.error("Login failed", error);
       throw new Error("Login failed. Please try again.");
@@ -184,7 +192,8 @@ export function useAuth(): UseAuthReturn {
         status: 'pending',
         emailVerified: false,
         role: 'user',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        provider: 'password'
       };
       await setDoc(userRef, newProfile);
 

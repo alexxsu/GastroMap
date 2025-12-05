@@ -117,7 +117,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               ref={searchInputRef}
               type="text"
               placeholder={t('searchExperiences')}
-              className="bg-transparent border-none focus:outline-none text-sm text-white w-full placeholder-gray-500"
+              className="bg-transparent border-none focus:outline-none text-base text-white w-full placeholder-gray-500"
+              style={{ fontSize: '16px' }}
               value={searchQuery}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setTimeout(() => { if (!searchQuery) closeSearch(); }, 150)}

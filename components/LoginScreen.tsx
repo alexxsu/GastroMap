@@ -88,29 +88,29 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   // Initial mode - show main options
   if (mode === 'initial') {
     return (
-      <div className="fixed inset-0 bg-gray-900 overflow-y-auto">
-        {/* Fixed background effects */}
-        <div className="fixed top-0 left-0 w-full h-full opacity-20 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[100px]"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[100px]"></div>
+      <div className="fixed inset-0 bg-gray-900 overflow-x-hidden overflow-y-auto">
+        {/* Fixed background effects - contained to prevent overflow */}
+        <div className="fixed inset-0 overflow-hidden opacity-20 pointer-events-none">
+          <div className="absolute top-1/4 left-0 w-64 h-64 bg-blue-600 rounded-full blur-[100px] -translate-x-1/4"></div>
+          <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-purple-600 rounded-full blur-[100px] translate-x-1/4"></div>
         </div>
         
         {/* Scrollable content */}
-        <div className="relative z-10 flex flex-col items-center min-h-full p-6 py-8 pb-16">
-          <div className="bg-gray-800/80 backdrop-blur p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 text-center animate-fade-in-up">
+        <div className="relative z-10 flex flex-col items-center min-h-full p-4 py-6 pb-12">
+          <div className="bg-gray-800/80 backdrop-blur p-5 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 text-center animate-fade-in-up">
             {/* Logo Section */}
-            <div className="flex justify-center mb-6">
-              <img src="/logo.svg" alt="TraceBook Logo" className="w-28 h-28 sm:w-40 sm:h-40 object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500" />
+            <div className="flex justify-center mb-4">
+              <img src="/logo.svg" alt="TraceBook Logo" className="w-24 h-24 sm:w-36 sm:h-36 object-contain drop-shadow-2xl" />
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">{t('appName')}</h1>
-            <p className="text-gray-400 mb-6 leading-relaxed text-sm sm:text-base">
+            <h1 className="text-xl sm:text-2xl font-bold text-white mb-1 tracking-tight">{t('appName')}</h1>
+            <p className="text-gray-400 mb-4 leading-relaxed text-sm">
               {language === 'zh' ? '记录你的美食足迹，与朋友实时分享。' : 'Trace your experiences. Share memories with friends in real-time.'}
             </p>
 
             {/* Informational Badge */}
-            <div className="flex items-center justify-center gap-2 mb-5 bg-blue-500/10 border border-blue-500/20 px-3 py-2 rounded-full mx-auto w-fit">
-              <span className="text-blue-200 text-xs sm:text-sm font-medium tracking-wide">
+            <div className="flex items-center justify-center gap-2 mb-4 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-full mx-auto w-fit">
+              <span className="text-blue-200 text-xs font-medium tracking-wide">
                 {language === 'zh' ? '登录后可发布和编辑体验' : 'Log in to post and edit experiences'}
               </span>
             </div>
@@ -187,24 +187,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   // Sign in with email mode
   if (mode === 'signin') {
     return (
-      <div className="fixed inset-0 bg-gray-900 overflow-y-auto">
-        <div className="fixed top-0 left-0 w-full h-full opacity-20 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[100px]"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[100px]"></div>
+      <div className="fixed inset-0 bg-gray-900 overflow-x-hidden overflow-y-auto">
+        <div className="fixed inset-0 overflow-hidden opacity-20 pointer-events-none">
+          <div className="absolute top-1/4 left-0 w-64 h-64 bg-blue-600 rounded-full blur-[100px] -translate-x-1/4"></div>
+          <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-purple-600 rounded-full blur-[100px] translate-x-1/4"></div>
         </div>
-        <div className="relative z-10 flex flex-col items-center min-h-full p-6 py-8 pb-16">
-          <div className="bg-gray-800/80 backdrop-blur p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 animate-fade-in-up">
+        <div className="relative z-10 flex flex-col items-center min-h-full p-4 py-6 pb-12">
+          <div className="bg-gray-800/80 backdrop-blur p-5 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 animate-fade-in-up">
             <button
               onClick={goBack}
-              className="flex items-center gap-2 text-gray-400 hover:text-white transition mb-6"
+              className="flex items-center gap-2 text-gray-400 hover:text-white transition mb-4"
             >
               <ArrowLeft size={18} />
               {language === 'zh' ? '返回' : 'Back'}
             </button>
 
-            <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-white mb-2">{language === 'zh' ? '欢迎回来' : 'Welcome Back'}</h1>
-              <p className="text-gray-400">{language === 'zh' ? '登录你的账号' : 'Sign in to your account'}</p>
+            <div className="text-center mb-5">
+              <h1 className="text-xl font-bold text-white mb-1">{language === 'zh' ? '欢迎回来' : 'Welcome Back'}</h1>
+              <p className="text-gray-400 text-sm">{language === 'zh' ? '登录你的账号' : 'Sign in to your account'}</p>
             </div>
 
             {error && (
@@ -213,9 +213,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </div>
             )}
 
-            <form onSubmit={handleEmailSignIn} className="space-y-4">
+            <form onSubmit={handleEmailSignIn} className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">{t('email')}</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">{t('email')}</label>
                 <div className="relative">
                   <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                   <input
@@ -276,41 +276,41 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   // Sign up mode
   return (
-    <div className="fixed inset-0 bg-gray-900 overflow-y-auto">
-      <div className="fixed top-0 left-0 w-full h-full opacity-20 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[100px]"></div>
+    <div className="fixed inset-0 bg-gray-900 overflow-x-hidden overflow-y-auto">
+      <div className="fixed inset-0 overflow-hidden opacity-20 pointer-events-none">
+        <div className="absolute top-1/4 left-0 w-64 h-64 bg-blue-600 rounded-full blur-[100px] -translate-x-1/4"></div>
+        <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-purple-600 rounded-full blur-[100px] translate-x-1/4"></div>
       </div>
-      <div className="relative z-10 flex flex-col items-center min-h-full p-6 py-8 pb-16">
-        <div className="bg-gray-800/80 backdrop-blur p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 animate-fade-in-up">
+      <div className="relative z-10 flex flex-col items-center min-h-full p-4 py-6 pb-12">
+        <div className="bg-gray-800/80 backdrop-blur p-5 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 animate-fade-in-up">
           <button
             onClick={goBack}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition mb-6"
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition mb-4"
           >
             <ArrowLeft size={18} />
             {language === 'zh' ? '返回' : 'Back'}
           </button>
 
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-white mb-2">{language === 'zh' ? '创建账号' : 'Create Account'}</h1>
-            <p className="text-gray-400 text-sm">{language === 'zh' ? '加入 TraceBook 开始记录你的美食足迹' : 'Join TraceBook to start mapping your experiences'}</p>
+          <div className="text-center mb-4">
+            <h1 className="text-xl font-bold text-white mb-1">{language === 'zh' ? '创建账号' : 'Create Account'}</h1>
+            <p className="text-gray-400 text-xs">{language === 'zh' ? '加入 TraceBook 开始记录你的美食足迹' : 'Join TraceBook to start mapping your experiences'}</p>
           </div>
 
           {error && (
-            <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4 text-sm">
+            <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-3 py-2 rounded-xl mb-3 text-sm">
               {error}
             </div>
           )}
 
           {successMessage && (
-            <div className="bg-green-500/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4 text-sm">
+            <div className="bg-green-500/20 border border-green-500/50 text-green-300 px-3 py-2 rounded-xl mb-3 text-sm">
               {successMessage}
             </div>
           )}
 
-          <form onSubmit={handleEmailSignUp} className="space-y-3">
+          <form onSubmit={handleEmailSignUp} className="space-y-2.5">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">{t('displayName')}</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">{t('displayName')}</label>
               <div className="relative">
                 <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input
