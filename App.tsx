@@ -1,4 +1,6 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from './firebaseConfig';
 import { Restaurant, Visit, ViewState, UserMap } from './types';
 import { GOOGLE_MAPS_API_KEY } from './firebaseConfig';
 
@@ -7,7 +9,6 @@ import {
   useAuth,
   useMaps,
   useRestaurants,
-  useSearch,
   useFilter,
   useMapControls,
   useNotifications
@@ -28,7 +29,7 @@ import { Tutorial, TutorialButton } from './components/Tutorial';
 // New extracted components
 import { LoginScreen } from './components/LoginScreen';
 import { PendingScreen } from './components/PendingScreen';
-import { HeaderBar } from './components/HeaderBar';
+import { HeaderBar, RestaurantWithMap } from './components/HeaderBar';
 import { MapSelectorPill } from './components/MapSelectorPill';
 import { SideMenu } from './components/SideMenu';
 import { UserDetailModal } from './components/UserDetailModal';
@@ -90,18 +91,80 @@ function App() {
     clearDatabase
   } = useRestaurants(user, userProfile, activeMap, viewState, setViewState);
 
-  // Search hook
-  const {
-    searchQuery,
-    setSearchQuery,
-    searchResults,
-    isSearchFocused,
-    setIsSearchFocused,
-    isSearchClosing,
-    searchInputRef,
-    closeSearch,
-    handleSearchSelect
-  } = useSearch(restaurants);
+  // Pin list state (replaces old text search)
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchClosing, setIsSearchClosing] = useState(false);
+  const [allRestaurantsWithMaps, setAllRestaurantsWithMaps] = useState<RestaurantWithMap[]>([]);
+
+  // Close search with animation
+  const closeSearch = useCallback(() => {
+    setIsSearchClosing(true);
+    setTimeout(() => {
+      setIsSearchOpen(false);
+      setIsSearchClosing(false);
+    }, 150);
+  }, []);
+
+  // Fetch all restaurants from all user-accessible maps
+  useEffect(() => {
+    const fetchAllRestaurants = async () => {
+      if (!user || !allMaps || allMaps.length === 0) {
+        setAllRestaurantsWithMaps([]);
+        return;
+      }
+
+      try {
+        const allRestaurants: RestaurantWithMap[] = [];
+        
+        for (const map of allMaps) {
+          const restaurantsRef = collection(db, 'maps', map.id, 'restaurants');
+          const snapshot = await getDocs(restaurantsRef);
+          
+          snapshot.forEach((doc) => {
+            const data = doc.data() as Restaurant;
+            if (data.visits && data.visits.length > 0) {
+              allRestaurants.push({
+                ...data,
+                mapId: map.id,
+                mapName: map.name
+              });
+            }
+          });
+        }
+        
+        setAllRestaurantsWithMaps(allRestaurants);
+      } catch (error) {
+        console.error('Error fetching all restaurants:', error);
+      }
+    };
+
+    fetchAllRestaurants();
+  }, [user, allMaps, restaurants]); // Re-fetch when current map's restaurants change
+
+  // Handle selecting a pin from the list
+  const handleSelectPin = useCallback((restaurantWithMap: RestaurantWithMap) => {
+    // Close the search dropdown
+    closeSearch();
+    
+    // Find the map this restaurant belongs to
+    const targetMap = allMaps.find(m => m.id === restaurantWithMap.mapId);
+    
+    if (targetMap) {
+      // If not on the correct map, switch to it
+      if (activeMap?.id !== targetMap.id) {
+        setActiveMap(targetMap);
+      }
+      
+      // Create a clean restaurant object without the map info for selection
+      const { mapId, mapName, ...restaurant } = restaurantWithMap;
+      
+      // Small delay to allow map switch to complete, then select the restaurant
+      setTimeout(() => {
+        setSelectedRestaurant(restaurant as Restaurant);
+        setViewState(ViewState.RESTAURANT_DETAIL);
+      }, activeMap?.id !== targetMap.id ? 300 : 0);
+    }
+  }, [allMaps, activeMap, setActiveMap, setSelectedRestaurant, setViewState, closeSearch]);
 
   // Filter hook
   const {
@@ -433,14 +496,6 @@ function App() {
     setIsAddModalClosing(false);
   }, []);
 
-  // Search select handler
-  const onSearchSelect = useCallback((restaurant: Restaurant) => {
-    handleSearchSelect(restaurant, mapInstance, (r) => {
-      setSelectedRestaurant(r);
-      setViewState(ViewState.RESTAURANT_DETAIL);
-    });
-  }, [handleSearchSelect, mapInstance, setSelectedRestaurant]);
-
   // Map click handler
   const handleMapClick = useCallback(() => {
     if (isFilterOpen) {
@@ -503,15 +558,13 @@ function App() {
           {/* Top Center Controls */}
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 flex flex-col items-center gap-2 w-[calc(100%-2rem)] max-w-sm pointer-events-none">
             <HeaderBar
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              searchResults={searchResults}
-              isSearchFocused={isSearchFocused}
-              setIsSearchFocused={setIsSearchFocused}
+              allRestaurantsWithMaps={allRestaurantsWithMaps}
+              currentMapRestaurants={restaurants}
+              isSearchOpen={isSearchOpen}
+              setIsSearchOpen={setIsSearchOpen}
               isSearchClosing={isSearchClosing}
-              searchInputRef={searchInputRef}
               closeSearch={closeSearch}
-              onSearchSelect={onSearchSelect}
+              onSelectPin={handleSelectPin}
               selectedGrades={selectedGrades}
               isFilterOpen={isFilterOpen}
               isFilterClosing={isFilterClosing}
@@ -526,6 +579,7 @@ function App() {
               onMarkAsRead={markAsRead}
               onMarkAllAsRead={markAllAsRead}
               showNotifications={!user?.isAnonymous}
+              activeMapId={activeMap?.id}
             />
 
             {/* Map Selector Pill */}
