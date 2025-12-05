@@ -88,7 +88,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   // Initial mode - show main options
   if (mode === 'initial') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-6 relative overflow-hidden">
+      <div className="flex flex-col items-center justify-start min-h-screen bg-gray-900 p-6 pt-10 pb-20 relative overflow-y-auto">
         <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[100px]"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[100px]"></div>
@@ -182,7 +182,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   // Sign in with email mode
   if (mode === 'signin') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-6 relative overflow-hidden">
+      <div className="flex flex-col items-center justify-start min-h-screen bg-gray-900 p-6 py-10 relative overflow-y-auto">
         <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[100px]"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[100px]"></div>
@@ -269,7 +269,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   // Sign up mode
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-6 relative overflow-hidden">
+    <div className="flex flex-col items-center justify-start min-h-screen bg-gray-900 p-6 py-10 relative overflow-y-auto">
       <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[100px]"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[100px]"></div>
