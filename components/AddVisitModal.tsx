@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Camera, MapPin, Search, Loader2, X, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Coordinates, PlaceResult, Restaurant, Visit } from '../types';
 import { getGPSFromImage } from '../utils/exif';
-import { compressImage } from '../utils/image';
+import { compressImage, validateImage, withTimeout, IMAGE_LIMITS } from '../utils/image';
 import { GRADES, getGradeDescription, getGradeColor } from '../utils/rating';
 import { storage } from '../firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -90,38 +90,63 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
     }
   }, [previewUrls, onPhotosUploaded]);
 
-  const processFile = async (file: File): Promise<Blob> => {
+  const processFile = async (file: File): Promise<{ blob: Blob; error?: string }> => {
+    const fileName = file.name;
+
+    // 1. Check file size limits first (fast fail)
+    if (file.size > IMAGE_LIMITS.MAX_FILE_SIZE) {
+      throw new Error(`${fileName}: File too large (max 50MB)`);
+    }
+    if (file.size < IMAGE_LIMITS.MIN_FILE_SIZE) {
+      throw new Error(`${fileName}: File is empty or corrupt`);
+    }
+
     let fileToProcess: Blob = file;
 
-    // 1. Handle HEIC conversion if necessary
+    // 2. Handle HEIC conversion if necessary
     const isHeic = file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic';
     if (isHeic) {
       try {
-        const convertedBlob = await heic2any({
-          blob: file,
-          toType: "image/jpeg",
-          quality: 0.8
-        });
+        const convertedBlob = await withTimeout(
+          heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.8
+          }),
+          IMAGE_LIMITS.PROCESSING_TIMEOUT,
+          `${fileName}: HEIC conversion timed out - file may be corrupt`
+        );
         fileToProcess = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-      } catch (err) {
-        console.error("HEIC conversion failed for file", file.name, err);
-        // Fallback to original if HEIC fails (though browser might not show it)
+      } catch (err: any) {
+        // HEIC conversion failure is fatal - browsers can't display HEIC
+        const message = err?.message || 'Unknown error';
+        throw new Error(`${fileName}: Failed to convert HEIC file - ${message}`);
       }
     }
 
-    // 2. Compress the image (Resize to max 1600px, JPEG 80%)
+    // 3. Validate the image can be decoded (catches corrupt files)
+    const validation = await validateImage(fileToProcess);
+    if (!validation.valid) {
+      throw new Error(`${fileName}: ${validation.error}`);
+    }
+
+    // 4. Compress the image (Resize to max 1920px, JPEG 90%)
     try {
-      return await compressImage(fileToProcess);
-    } catch (err) {
-      console.error("Compression failed", err);
-      return fileToProcess;
+      const compressed = await withTimeout(
+        compressImage(fileToProcess),
+        IMAGE_LIMITS.PROCESSING_TIMEOUT,
+        `${fileName}: Image compression timed out`
+      );
+      return { blob: compressed };
+    } catch (err: any) {
+      throw new Error(`${fileName}: Compression failed - ${err?.message || 'unknown error'}`);
     }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setIsProcessingImg(true);
-      
+
       const files = Array.from(e.target.files) as File[];
       const firstFile = files[0];
 
@@ -133,23 +158,32 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
         const results = await Promise.allSettled(files.map(f => processFile(f)));
 
         const successfulBlobs: Blob[] = [];
-        let failedCount = 0;
+        const failedFiles: string[] = [];
 
         results.forEach((result, i) => {
           if (result.status === 'fulfilled') {
-            successfulBlobs.push(result.value);
+            successfulBlobs.push(result.value.blob);
           } else {
-            failedCount++;
-            console.error(`Failed to process image ${files[i].name}:`, result.reason);
+            const errorMsg = result.reason?.message || `Unknown error processing ${files[i].name}`;
+            failedFiles.push(errorMsg);
+            console.error(`Failed to process image:`, errorMsg);
           }
         });
 
-        if (failedCount > 0) {
-          alert(`Warning: ${failedCount} of ${files.length} image(s) failed to process. Continuing with ${successfulBlobs.length} successful image(s).`);
+        if (failedFiles.length > 0 && successfulBlobs.length > 0) {
+          // Some succeeded, some failed - show details
+          const failedSummary = failedFiles.length <= 3
+            ? failedFiles.join('\n')
+            : `${failedFiles.slice(0, 3).join('\n')}\n... and ${failedFiles.length - 3} more`;
+          alert(`⚠️ ${failedFiles.length} of ${files.length} image(s) failed:\n\n${failedSummary}\n\nContinuing with ${successfulBlobs.length} valid image(s).`);
         }
 
         if (successfulBlobs.length === 0) {
-          throw new Error('All images failed to process');
+          // All failed - show specific errors
+          const errorSummary = failedFiles.length <= 5
+            ? failedFiles.join('\n')
+            : `${failedFiles.slice(0, 5).join('\n')}\n... and ${failedFiles.length - 5} more`;
+          throw new Error(`All images failed to process:\n\n${errorSummary}`);
         }
 
         const urls = successfulBlobs.map(b => URL.createObjectURL(b));
@@ -167,9 +201,10 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
         }
         setStep(2);
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error processing images", error);
-        alert("Failed to process images. This may be due to:\n- Unsupported image format\n- Corrupted image file\n- Memory issues\n\nPlease try with different photos or take new ones.");
+        const message = error?.message || 'Unknown error';
+        alert(`❌ Failed to process images\n\n${message}\n\nPlease try with different photos.`);
         setIsProcessingImg(false);
       }
     }
@@ -268,19 +303,33 @@ const AddVisitModal: React.FC<AddVisitModalProps> = ({
 
   const handleSave = async () => {
     if (!selectedPlace || !selectedPlace.geometry?.location || previewBlobs.length === 0) return;
-    
+
     setIsSaving(true);
 
     try {
       // 1. Upload ALL images to Firebase Storage
+      console.log('[Upload] Starting upload of', previewBlobs.length, 'images');
+      console.log('[Upload] Storage bucket:', storage.app.options.storageBucket);
+
       const uploadPromises = previewBlobs.map(async (blob, index) => {
         const filename = `visits/${selectedPlace.place_id}/${Date.now()}_img_${index}.jpg`;
+        console.log('[Upload] Uploading to path:', filename);
         const storageRef = ref(storage, filename);
-        const snapshot = await uploadBytes(storageRef, blob);
-        return await getDownloadURL(snapshot.ref);
+
+        try {
+          const snapshot = await uploadBytes(storageRef, blob);
+          console.log('[Upload] Upload successful, getting download URL...');
+          const url = await getDownloadURL(snapshot.ref);
+          console.log('[Upload] Download URL:', url);
+          return url;
+        } catch (uploadErr: any) {
+          console.error('[Upload] Individual upload failed:', uploadErr.code, uploadErr.message);
+          throw uploadErr;
+        }
       });
 
       const downloadURLs = await Promise.all(uploadPromises);
+      console.log('[Upload] All uploads complete. URLs:', downloadURLs);
 
       // 2. Construct Objects
       const newRestaurant: Restaurant = {

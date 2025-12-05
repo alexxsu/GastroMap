@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 interface AddButtonProps {
   isAddModalOpen: boolean;
@@ -52,12 +52,8 @@ export const AddButton: React.FC<AddButtonProps> = ({
         {!isAddModalOpen && (
           <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-yellow-400/30 via-red-400/20 to-blue-500/30 blur-md group-hover:opacity-80 group-hover:scale-110 transition-transform duration-500 opacity-50"></div>
         )}
-        <div className={`relative z-10 transition-transform duration-300 ${isAddModalOpen ? 'rotate-45' : ''}`}>
-          {isAddModalOpen ? (
-            <X size={28} className="text-white" strokeWidth={2.5} />
-          ) : (
-            <Plus size={28} className="text-white" strokeWidth={2.5} />
-          )}
+        <div className={`relative z-10 transition-transform duration-300 ease-out ${isAddModalOpen ? 'rotate-[135deg]' : 'rotate-0'}`}>
+          <Plus size={28} className="text-white" strokeWidth={2.5} />
         </div>
       </button>
     </div>

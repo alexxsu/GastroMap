@@ -197,7 +197,7 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-scroll" style={{ scrollbarGutter: 'stable' }}>
           
           {/* Menu View */}
           {currentView === 'menu' && (

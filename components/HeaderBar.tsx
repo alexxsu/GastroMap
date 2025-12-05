@@ -135,38 +135,49 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   };
 
   const mapIcon = (map: UserMap) => {
-    if (map.isDefault) return <Lock size={14} className="text-blue-400" />;
-    if (map.visibility === 'shared') return <Users size={14} className="text-green-400" />;
-    return <Globe size={14} className="text-gray-300" />;
+    // Demo/public maps get Globe (green)
+    if (map.visibility === 'public') return <Globe size={14} className="text-green-400 flex-shrink-0" />;
+    // Default maps get Lock (blue)
+    if (map.isDefault) return <Lock size={14} className="text-blue-400 flex-shrink-0" />;
+    // Shared maps get Users (purple)
+    return <Users size={14} className="text-purple-400 flex-shrink-0" />;
   };
 
   const mapSubtext = (map: UserMap) => {
-    if (map.isDefault) return isGuest ? 'Demo map (private)' : 'Private default map';
-    if (map.visibility === 'shared') return 'Shared map';
-    if (map.visibility === 'public') return 'Public map';
-    return 'Map';
+    if (map.visibility === 'public') return 'Public demo map';
+    if (map.isDefault) return 'Private default map';
+    return 'Shared map';
   };
 
   const categorizedResults = useMemo(() => {
-    const buckets: Record<string, SearchResultGroup[]> = {
-      default: [],
-      ownShared: [],
-      other: []
-    };
-    searchResults.forEach(group => {
-      if (currentUserUid && group.map.ownerUid === currentUserUid && group.map.isDefault) {
-        buckets.default.push(group);
-      } else if (currentUserUid && group.map.ownerUid === currentUserUid) {
-        buckets.ownShared.push(group);
-      } else {
-        buckets.other.push(group);
-      }
-    });
-    return [
-      { key: 'default', label: 'Your Default Map', items: buckets.default },
-      { key: 'ownShared', label: 'Your Shared Maps', items: buckets.ownShared },
-      { key: 'other', label: 'Other Maps', items: buckets.other }
+    // My Maps
+    const myDefault = searchResults.filter(g => 
+      currentUserUid && g.map.ownerUid === currentUserUid && g.map.isDefault
+    );
+    const myShared = searchResults.filter(g => 
+      currentUserUid && g.map.ownerUid === currentUserUid && !g.map.isDefault
+    );
+    
+    // Other Maps - separate demo (public) from other users' shared
+    const demoMaps = searchResults.filter(g => 
+      g.map.ownerUid !== currentUserUid && g.map.visibility === 'public'
+    );
+    const otherUserMaps = searchResults.filter(g => 
+      g.map.ownerUid !== currentUserUid && g.map.visibility !== 'public'
+    );
+
+    const sections = [
+      { key: 'my-default', label: 'My Default Map', items: myDefault, isMyMaps: true },
+      { key: 'my-shared', label: 'My Shared Maps', items: myShared, isMyMaps: true },
+      { key: 'demo', label: 'Demo Maps', items: demoMaps, isMyMaps: false },
+      { key: 'other-users', label: "Other Users' Maps", items: otherUserMaps, isMyMaps: false }
     ].filter(section => section.items.length > 0);
+
+    // Group into categories
+    const myMaps = sections.filter(s => s.isMyMaps);
+    const otherMaps = sections.filter(s => !s.isMyMaps);
+    
+    return { sections, myMaps, otherMaps };
   }, [searchResults, currentUserUid]);
 
   const adminAura = useMemo(() => isAdmin ? 'shadow-[0_0_0_1px_rgba(148,163,255,0.35)] ring-1 ring-indigo-400/40 bg-gradient-to-r from-gray-800/90 via-gray-800/80 to-gray-900/90' : '', [isAdmin]);
@@ -257,13 +268,13 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
             {/* Normal or admin input mode */}
             {(!isAdmin || adminSearchMode === 'input') && (
-              <div data-tutorial="search" className={`flex-1 flex items-center rounded-lg px-2 h-[36px] border ${isAdmin ? 'border-indigo-500/50 bg-gray-800/70' : 'border-transparent bg-gray-700/50'} ${isSearchClosing ? 'animate-scale-out' : 'animate-scale-in'}`}>
-                <Search size={14} className="text-gray-400 mr-2 flex-shrink-0" />
+              <div data-tutorial="search" className={`flex-1 flex items-center rounded-lg px-2 h-[40px] border ${isAdmin ? 'border-indigo-500/50 bg-gray-800/70' : 'border-transparent bg-gray-700/50'} ${isSearchClosing ? 'animate-scale-out' : 'animate-scale-in'}`}>
+                <Search size={16} className="text-gray-400 mr-2 flex-shrink-0" />
                 <input
               ref={searchInputRef}
               type="text"
               placeholder={t('searchExperiences')}
-              className="bg-transparent border-none focus:outline-none text-sm text-white w-full placeholder-gray-500"
+              className="bg-transparent border-none focus:outline-none text-base text-white w-full placeholder-gray-500"
               value={searchQuery}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => {
@@ -353,55 +364,124 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       {isSearchFocused && searchResults.length > 0 && (searchQuery || isAdmin) && (
         <>
           <div
-            className="fixed inset-0 z-10 bg-black/20"
+            className="fixed inset-0 z-10 bg-black/30 transition-opacity duration-200"
             onClick={() => {
               setAdminSearchMode('list');
               closeSearch();
             }}
           ></div>
-          <div className="mt-2 border-t border-gray-700 pt-2 max-h-64 overflow-y-auto rounded-lg bg-gray-800/60 backdrop-blur-sm animate-scale-in relative z-20">
-            {categorizedResults.length > 0 ? (
-              categorizedResults.map(section => (
-                <div key={section.key} className="mb-1">
-                  <div className="text-[11px] uppercase tracking-wide text-gray-500 px-2 py-1">{section.label}</div>
-                  {section.items.map(group => {
-                    const isOpen = openMaps[group.map.id] === true;
-                    return (
-                      <div key={group.map.id} className="px-1 mb-1">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); toggleMapOpen(group.map.id); }}
-                          className={`w-full flex items-center justify-between px-2 py-2 rounded-md border transition-all duration-150 ${isOpen ? 'bg-gray-900/70 border-gray-700' : 'bg-gray-800/70 border-gray-800 hover:border-gray-600'} hover:bg-gray-800/80`}
-                        >
-                          <div className="flex items-center gap-2 text-left">
-                            {mapIcon(group.map)}
-                            <div className="flex flex-col leading-tight">
-                              <span className="text-sm text-gray-100">{mapLabel(group.map)}</span>
-                              <span className="text-[11px] text-gray-500">{mapSubtext(group.map)}</span>
-                            </div>
-                          </div>
-                          <span className="text-[11px] text-gray-400">{group.matches.length} pins</span>
-                        </button>
-                        {isOpen && (
-                          <div className="mt-1 flex flex-col gap-1 pl-2 pr-1 pb-1 animate-scale-in">
-                            {group.matches.map(r => (
+          <div 
+            className="mt-2 border-t border-gray-700 pt-2 max-h-72 overflow-y-scroll rounded-lg bg-gray-800/80 backdrop-blur-md animate-scale-in relative z-20"
+            style={{ scrollbarGutter: 'stable' }}
+          >
+            {categorizedResults.sections.length > 0 ? (
+              <>
+                {/* My Maps Category */}
+                {categorizedResults.myMaps.length > 0 && (
+                  <div className="border-b border-gray-700/50 pb-1 mb-1">
+                    <div className="px-2 py-1.5 bg-gray-900/50 text-[10px] uppercase tracking-wider text-gray-400 font-semibold sticky top-0 backdrop-blur-sm">
+                      My Maps
+                    </div>
+                    {categorizedResults.myMaps.map(section => (
+                      <div key={section.key} className="px-1">
+                        <div className="text-[10px] uppercase tracking-wide text-gray-500 px-2 py-1 pl-3">{section.label}</div>
+                        {section.items.map(group => {
+                          const isOpen = openMaps[group.map.id] === true;
+                          return (
+                            <div key={group.map.id} className="px-1 mb-1">
                               <button
-                                key={r.id}
-                                onClick={(e) => { e.stopPropagation(); onSearchSelect(r, group.map); }}
-                                className="w-full text-left px-2 py-1.5 hover:bg-gray-700/80 rounded text-sm text-gray-200 hover:text-white flex flex-col border border-transparent hover:border-gray-600 transition-all duration-150"
+                                onClick={(e) => { e.stopPropagation(); toggleMapOpen(group.map.id); }}
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border transition-all duration-200 ease-out ${
+                                  isOpen 
+                                    ? 'bg-blue-600/20 border-blue-500/30 shadow-sm' 
+                                    : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600 hover:bg-gray-800/70'
+                                }`}
                               >
-                                <span className="font-semibold truncate">{r.name}</span>
-                                <span className="text-[11px] text-gray-500 truncate">{r.address}</span>
+                                <div className="flex items-center gap-2.5 text-left min-w-0">
+                                  {mapIcon(group.map)}
+                                  <div className="flex flex-col leading-tight min-w-0">
+                                    <span className="text-sm text-gray-100 truncate">{group.map.name}</span>
+                                    <span className="text-[10px] text-gray-500">{mapSubtext(group.map)}</span>
+                                  </div>
+                                </div>
+                                <span className="text-[10px] text-gray-400 ml-2 flex-shrink-0">{group.matches.length} pins</span>
                               </button>
-                            ))}
-                          </div>
-                        )}
+                              <div className={`overflow-hidden transition-all duration-200 ease-out ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                <div className="mt-1 flex flex-col gap-0.5 pl-3 pr-1 pb-1">
+                                  {group.matches.map(r => (
+                                    <button
+                                      key={r.id}
+                                      onClick={(e) => { e.stopPropagation(); onSearchSelect(r, group.map); }}
+                                      className="w-full text-left px-3 py-2 hover:bg-gray-700/60 rounded-md text-sm text-gray-200 hover:text-white flex flex-col border border-transparent hover:border-gray-600/50 transition-all duration-150"
+                                    >
+                                      <span className="font-medium truncate">{r.name}</span>
+                                      <span className="text-[10px] text-gray-500 truncate">{r.address}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
-                </div>
-              ))
+                    ))}
+                  </div>
+                )}
+
+                {/* Other Maps Category */}
+                {categorizedResults.otherMaps.length > 0 && (
+                  <div className="pb-1">
+                    <div className="px-2 py-1.5 bg-gray-900/50 text-[10px] uppercase tracking-wider text-gray-400 font-semibold sticky top-0 backdrop-blur-sm">
+                      Other Maps
+                    </div>
+                    {categorizedResults.otherMaps.map(section => (
+                      <div key={section.key} className="px-1">
+                        <div className="text-[10px] uppercase tracking-wide text-gray-500 px-2 py-1 pl-3">{section.label}</div>
+                        {section.items.map(group => {
+                          const isOpen = openMaps[group.map.id] === true;
+                          return (
+                            <div key={group.map.id} className="px-1 mb-1">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleMapOpen(group.map.id); }}
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border transition-all duration-200 ease-out ${
+                                  isOpen 
+                                    ? 'bg-blue-600/20 border-blue-500/30 shadow-sm' 
+                                    : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600 hover:bg-gray-800/70'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 text-left min-w-0">
+                                  {mapIcon(group.map)}
+                                  <div className="flex flex-col leading-tight min-w-0">
+                                    <span className="text-sm text-gray-100 truncate">{mapLabel(group.map)}</span>
+                                    <span className="text-[10px] text-gray-500">{mapSubtext(group.map)}</span>
+                                  </div>
+                                </div>
+                                <span className="text-[10px] text-gray-400 ml-2 flex-shrink-0">{group.matches.length} pins</span>
+                              </button>
+                              <div className={`overflow-hidden transition-all duration-200 ease-out ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                <div className="mt-1 flex flex-col gap-0.5 pl-3 pr-1 pb-1">
+                                  {group.matches.map(r => (
+                                    <button
+                                      key={r.id}
+                                      onClick={(e) => { e.stopPropagation(); onSearchSelect(r, group.map); }}
+                                      className="w-full text-left px-3 py-2 hover:bg-gray-700/60 rounded-md text-sm text-gray-200 hover:text-white flex flex-col border border-transparent hover:border-gray-600/50 transition-all duration-150"
+                                    >
+                                      <span className="font-medium truncate">{r.name}</span>
+                                      <span className="text-[10px] text-gray-500 truncate">{r.address}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             ) : (
-              <p className="text-gray-500 text-sm px-2 py-1">{t('noResults')}</p>
+              <p className="text-gray-500 text-sm px-3 py-2">{t('noResults')}</p>
             )}
           </div>
         </>

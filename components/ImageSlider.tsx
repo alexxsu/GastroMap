@@ -14,7 +14,18 @@ const SliderImage: React.FC<{ src: string; alt: string; className?: string }> = 
   useEffect(() => {
     setIsLoaded(false);
     setIsError(false);
+    console.log('[SliderImage] Loading image:', src);
   }, [src]);
+
+  const handleLoad = () => {
+    console.log('[SliderImage] Image loaded successfully:', src);
+    setIsLoaded(true);
+  };
+
+  const handleError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error('[SliderImage] Image failed to load:', src, e);
+    setIsError(true);
+  };
 
   return (
     <div className={`relative ${className}`}>
@@ -30,27 +41,28 @@ const SliderImage: React.FC<{ src: string; alt: string; className?: string }> = 
           </div>
         </div>
       )}
-      
+
       {/* Error state */}
       {isError && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
           <div className="flex flex-col items-center gap-2 text-gray-500">
             <ImageIcon size={24} />
             <span className="text-xs">Failed to load</span>
+            <span className="text-[10px] text-gray-600 max-w-[200px] truncate">{src}</span>
           </div>
         </div>
       )}
 
       {/* Actual image */}
-      <img 
+      <img
         src={src}
         alt={alt}
         className={`w-full h-full object-cover select-none pointer-events-none transition-opacity duration-300 ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
         loading="lazy"
-        onLoad={() => setIsLoaded(true)}
-        onError={() => setIsError(true)}
+        onLoad={handleLoad}
+        onError={handleError}
       />
     </div>
   );
@@ -105,13 +117,19 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ photos }) => {
   const [index, setIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  
+
   // Use Refs for touch tracking to avoid state update lag during gestures
   const touchStartRef = useRef<number | null>(null);
   const touchEndRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
 
-  if (!photos || photos.length === 0) return <div className="h-48 bg-gray-800" />;
+  // Debug: Log what photos we're receiving
+  console.log('[ImageSlider] Received photos:', photos);
+
+  if (!photos || photos.length === 0) {
+    console.log('[ImageSlider] No photos to display');
+    return <div className="h-48 bg-gray-800" />;
+  }
 
   const canGoNext = index < photos.length - 1;
   const canGoPrev = index > 0;

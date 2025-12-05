@@ -53,10 +53,16 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
   filteredCount
 }) => {
   const [isAdminListOpen, setIsAdminListOpen] = useState(false);
+  const isGuest = user?.isAnonymous || userProfile?.role === 'guest';
+
+  const visibility = activeMap.visibility || (activeMap.isDefault ? 'private' : 'shared');
 
   const getPillStyles = () => {
     if (isCompactCardOpen) {
       return 'bg-blue-600/90 border-blue-400/50 text-white';
+    }
+    if (visibility === 'public' || isGuest) {
+      return 'bg-green-900/80 border-green-700 text-green-200 hover:bg-green-800/90 hover:border-green-600';
     }
     if (activeMap.isDefault) {
       return 'bg-gray-900/80 border-gray-700 text-gray-200 hover:bg-gray-800/90 hover:border-gray-600';
@@ -68,6 +74,9 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
   };
 
   const getIcon = () => {
+    if (visibility === 'public' || isGuest) {
+      return <Globe size={16} className={isCompactCardOpen ? 'text-white' : 'text-green-400'} />;
+    }
     if (activeMap.isDefault) {
       return <Lock size={16} className={isCompactCardOpen ? 'text-white' : 'text-blue-400'} />;
     }
@@ -78,14 +87,27 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
   };
 
   const categorizeMaps = (maps: UserMap[]) => {
+    // My Maps section
     const myDefaults = maps.filter(m => m.ownerUid === user?.uid && m.isDefault);
     const myShared = maps.filter(m => m.ownerUid === user?.uid && !m.isDefault);
-    const others = maps.filter(m => m.ownerUid !== user?.uid);
+    
+    // Other Maps section - separate demo (public) maps from other users' shared maps
+    const demoMaps = maps.filter(m => m.ownerUid !== user?.uid && m.visibility === 'public');
+    const otherUserMaps = maps.filter(m => m.ownerUid !== user?.uid && m.visibility !== 'public');
+    
     return [
-      { key: 'my-default', label: 'Your Default Maps', items: myDefaults },
-      { key: 'my-shared', label: 'Your Shared Maps', items: myShared },
-      { key: 'others', label: 'Other Maps', items: others }
+      { key: 'my-default', label: 'My Default Map', items: myDefaults, isMyMaps: true },
+      { key: 'my-shared', label: 'My Shared Maps', items: myShared, isMyMaps: true },
+      { key: 'demo', label: 'Demo Maps', items: demoMaps, isMyMaps: false },
+      { key: 'other-users', label: "Other Users' Maps", items: otherUserMaps, isMyMaps: false }
     ].filter(section => section.items.length > 0);
+  };
+
+  // Group sections by category for rendering
+  const getGroupedSections = (sections: ReturnType<typeof categorizeMaps>) => {
+    const myMaps = sections.filter(s => s.isMyMaps);
+    const otherMaps = sections.filter(s => !s.isMyMaps);
+    return { myMaps, otherMaps };
   };
 
   const getDisplayName = (map: UserMap) => {
@@ -101,6 +123,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
     const lock = "\uD83D\uDD12";      // 🔒
     const usersIcon = "\uD83D\uDC65"; // 👥
     const globe = "\uD83C\uDF10";     // 🌐
+    if (map.visibility === 'public') return `${globe} ${name} - Public`;
     if (map.isDefault) return `${lock} ${name} - Private`;
     if (map.ownerUid === user?.uid) return `${usersIcon} ${name}`;
     return `${globe} ${name} (${getOwnerDisplayName(map)})`;
@@ -120,7 +143,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
 
       {/* Compact Viewing Card */}
       {isCompactCardOpen && (
-        <div className="bg-gray-900/90 backdrop-blur border border-gray-700 rounded-xl px-3 py-2 shadow-xl animate-scale-in pointer-events-auto self-start min-w-[220px]">
+        <div className="bg-gray-900/90 backdrop-blur border border-gray-700 rounded-xl px-3 py-2 shadow-xl animate-scale-in pointer-events-auto self-start w-[260px]">
           <div className="flex items-center gap-2 text-xs text-gray-200">
             <span className={`inline-flex h-2 w-2 rounded-full flex-shrink-0 ${
               activeMap.isDefault ? 'bg-blue-400' :
@@ -133,7 +156,9 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
 
           {/* Map type label */}
           <div className="mt-1 text-[10px]">
-            {activeMap.isDefault ? (
+            {visibility === 'public' || isGuest ? (
+              <span className="text-green-400">Demo Map - Public</span>
+            ) : activeMap.isDefault ? (
               <span className="text-blue-400">Your Default Map - Private</span>
             ) : activeMap.ownerUid === user?.uid ? (
               <span className="text-purple-400">Shared Map (Owner)</span>
@@ -202,43 +227,103 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                 {getOwnerDisplayName(activeMap) + ' - ' + activeMap.name}
               </button>
               {isAdminListOpen && (
-                <div className="mt-2 max-h-60 overflow-y-auto rounded-lg border border-gray-700 bg-gray-900/90 animate-scale-in">
-                  {categorizeMaps(allMaps).map(section => (
-                    <div key={section.key} className="px-2 py-1.5 border-b border-gray-800 last:border-b-0">
-                      <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-0.5">{section.label}</div>
-                      <div className="flex flex-col">
-                        {section.items.map(map => (
-                          <div
-                            key={map.id}
-                            onClick={() => {
-                              onSelectMap(map);
-                              setIsAdminListOpen(false);
-                              setIsCompactCardOpen(false);
-                            }}
-                            className={`w-full text-left px-2 py-0.5 rounded cursor-pointer transition ${
-                              map.id === activeMap.id
-                                ? 'bg-gray-800 text-white'
-                                : 'text-gray-200 hover:bg-gray-800/70'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              {map.isDefault ? (
-                                <Lock size={14} className="text-blue-400" />
-                              ) : map.ownerUid === user?.uid ? (
-                                <Users size={14} className="text-purple-400" />
-                              ) : (
-                                <Globe size={14} className="text-green-400" />
-                              )}
-                              <div className="flex flex-col leading-tight">
-                                <span className="text-sm">{map.name}</span>
-                                <span className="text-[11px] text-gray-500">{getOwnerDisplayName(map)}</span>
-                              </div>
+                <div 
+                  className="mt-2 max-h-60 overflow-y-scroll rounded-lg border border-gray-700 bg-gray-900/90 animate-scale-in"
+                  style={{ scrollbarGutter: 'stable' }}
+                >
+                  {(() => {
+                    const sections = categorizeMaps(allMaps);
+                    const { myMaps, otherMaps } = getGroupedSections(sections);
+                    return (
+                      <>
+                        {/* My Maps Category */}
+                        {myMaps.length > 0 && (
+                          <div className="border-b border-gray-700">
+                            <div className="px-2 py-1.5 bg-gray-800/50 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+                              My Maps
                             </div>
+                            {myMaps.map(section => (
+                              <div key={section.key} className="px-2 py-1.5 border-b border-gray-800/50 last:border-b-0">
+                                <div className="text-[10px] uppercase tracking-wide text-gray-500 mb-0.5 pl-1">{section.label}</div>
+                                <div className="flex flex-col">
+                                  {section.items.map(map => (
+                                    <div
+                                      key={map.id}
+                                      onClick={() => {
+                                        onSelectMap(map);
+                                        setIsAdminListOpen(false);
+                                        setIsCompactCardOpen(false);
+                                      }}
+                                      className={`w-full text-left px-2 py-1 rounded cursor-pointer transition ${
+                                        map.id === activeMap.id
+                                          ? 'bg-blue-600/30 text-white'
+                                          : 'text-gray-200 hover:bg-gray-800/70'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        {map.isDefault ? (
+                                          <Lock size={14} className="text-blue-400 flex-shrink-0" />
+                                        ) : (
+                                          <Users size={14} className="text-purple-400 flex-shrink-0" />
+                                        )}
+                                        <div className="flex flex-col leading-tight min-w-0">
+                                          <span className="text-sm truncate">{map.name}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                        )}
+
+                        {/* Other Maps Category */}
+                        {otherMaps.length > 0 && (
+                          <div>
+                            <div className="px-2 py-1.5 bg-gray-800/50 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+                              Other Maps
+                            </div>
+                            {otherMaps.map(section => (
+                              <div key={section.key} className="px-2 py-1.5 border-b border-gray-800/50 last:border-b-0">
+                                <div className="text-[10px] uppercase tracking-wide text-gray-500 mb-0.5 pl-1">{section.label}</div>
+                                <div className="flex flex-col">
+                                  {section.items.map(map => (
+                                    <div
+                                      key={map.id}
+                                      onClick={() => {
+                                        onSelectMap(map);
+                                        setIsAdminListOpen(false);
+                                        setIsCompactCardOpen(false);
+                                      }}
+                                      className={`w-full text-left px-2 py-1 rounded cursor-pointer transition ${
+                                        map.id === activeMap.id
+                                          ? 'bg-blue-600/30 text-white'
+                                          : 'text-gray-200 hover:bg-gray-800/70'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        {/* Demo maps (public) get globe, others get users icon */}
+                                        {map.visibility === 'public' ? (
+                                          <Globe size={14} className="text-green-400 flex-shrink-0" />
+                                        ) : (
+                                          <Users size={14} className="text-purple-400 flex-shrink-0" />
+                                        )}
+                                        <div className="flex flex-col leading-tight min-w-0">
+                                          <span className="text-sm truncate">{map.name}</span>
+                                          <span className="text-[10px] text-gray-500 truncate">{getOwnerDisplayName(map)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </div>

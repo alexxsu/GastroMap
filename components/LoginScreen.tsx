@@ -88,34 +88,34 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   // Initial mode - show main options
   if (mode === 'initial') {
     return (
-      <div className="flex flex-col items-center justify-start min-h-screen bg-gray-900 p-6 pt-10 pb-20 relative overflow-y-auto">
-        <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[100px]"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[100px]"></div>
+      <div className="flex flex-col items-center min-h-screen min-h-[100dvh] bg-gray-900 px-5 py-4 relative overflow-y-auto overscroll-contain" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 16px))' }}>
+        <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 [@media(min-height:700px)]:w-96 [@media(min-height:700px)]:h-96 bg-blue-600 rounded-full blur-[100px]"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-64 h-64 [@media(min-height:700px)]:w-96 [@media(min-height:700px)]:h-96 bg-purple-600 rounded-full blur-[100px]"></div>
         </div>
-        <div className="bg-gray-800/80 backdrop-blur p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 z-10 text-center animate-fade-in-up">
+        <div className="bg-gray-800/80 backdrop-blur p-5 [@media(min-height:700px)]:p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 z-10 text-center animate-fade-in-up my-auto">
           {/* Logo Section */}
-          <div className="flex justify-center mb-8">
-            <img src="/logo.svg" alt="TraceBook Logo" className="w-40 h-40 object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500" />
+          <div className="flex justify-center mb-3 [@media(min-height:700px)]:mb-8">
+            <img src="/logo.svg" alt="TraceBook Logo" className="w-16 h-16 [@media(min-height:700px)]:w-40 [@media(min-height:700px)]:h-40 object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500" />
           </div>
 
-          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">{t('appName')}</h1>
-          <p className="text-gray-400 mb-8 leading-relaxed">
+          <h1 className="text-xl [@media(min-height:700px)]:text-3xl font-bold text-white mb-1 [@media(min-height:700px)]:mb-2 tracking-tight">{t('appName')}</h1>
+          <p className="text-gray-400 mb-3 [@media(min-height:700px)]:mb-8 leading-relaxed text-xs [@media(min-height:700px)]:text-base">
             {language === 'zh' ? '记录你的美食足迹，与朋友实时分享。' : 'Trace your experiences. Share memories with friends in real-time.'}
           </p>
 
-          {/* Informational Badge */}
-          <div className="flex items-center justify-center gap-2 mb-6 bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-full mx-auto w-fit">
+          {/* Informational Badge - hidden on short screens */}
+          <div className="hidden [@media(min-height:700px)]:flex items-center justify-center gap-2 mb-6 bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-full mx-auto w-fit">
             <span className="text-blue-200 text-sm font-medium tracking-wide">
               {language === 'zh' ? '登录后可发布和编辑体验' : 'Log in to post and edit experiences'}
             </span>
           </div>
 
           {/* Section 1: Google Sign In */}
-          <div className="mb-4">
+          <div className="mb-2 [@media(min-height:700px)]:mb-4">
             <button
               onClick={onLogin}
-              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-900 font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-black/20 transform hover:scale-[1.02] active:scale-95"
+              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-900 font-semibold py-2.5 [@media(min-height:700px)]:py-3 px-6 rounded-xl min-h-[44px] transition shadow-lg shadow-black/20 transform hover:scale-[1.02] active:scale-95 text-sm [@media(min-height:700px)]:text-base"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -128,35 +128,35 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
 
           {/* Divider */}
-          <div className="flex items-center gap-3 my-4">
+          <div className="flex items-center gap-3 my-2 [@media(min-height:700px)]:my-4">
             <div className="flex-1 h-px bg-gray-600"></div>
             <span className="text-gray-500 text-sm">{language === 'zh' ? '或' : 'or'}</span>
             <div className="flex-1 h-px bg-gray-600"></div>
           </div>
 
           {/* Section 2: Email Sign In & Create Account */}
-          <div className="space-y-3 mb-4">
+          <div className="space-y-2 [@media(min-height:700px)]:space-y-3 mb-2 [@media(min-height:700px)]:mb-4">
             <button
               onClick={() => { resetForm(); setMode('signin'); }}
-              className="w-full flex items-center justify-center gap-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-black/20 transform hover:scale-[1.02] active:scale-95"
+              className="w-full flex items-center justify-center gap-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 [@media(min-height:700px)]:py-3 px-6 rounded-xl min-h-[44px] transition shadow-lg shadow-black/20 transform hover:scale-[1.02] active:scale-95 text-sm [@media(min-height:700px)]:text-base"
             >
-              <Mail size={20} />
+              <Mail className="w-5 h-5" />
               {language === 'zh' ? '使用邮箱登录' : 'Sign in with Email'}
             </button>
 
             <button
               onClick={() => { resetForm(); setMode('signup'); }}
-              className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-black/20 transform hover:scale-[1.02] active:scale-95"
+              className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 [@media(min-height:700px)]:py-3 px-6 rounded-xl min-h-[44px] transition shadow-lg shadow-black/20 transform hover:scale-[1.02] active:scale-95 text-sm [@media(min-height:700px)]:text-base"
             >
-              <User size={20} />
+              <User className="w-5 h-5" />
               {language === 'zh' ? '创建账号' : 'Create Account'}
             </button>
           </div>
 
-          {/* Section 3: Guest Login with Animated Prompt */}
-          <div className="pt-4 border-t border-gray-700 relative">
-            {/* Animated "Try Demo" indicator */}
-            <div className="flex flex-col items-center mb-2">
+          {/* Section 3: Guest Login */}
+          <div className="pt-2 [@media(min-height:700px)]:pt-4 border-t border-gray-700 relative">
+            {/* Animated "Try Demo" indicator - hidden on short screens */}
+            <div className="hidden [@media(min-height:700px)]:flex flex-col items-center mb-2">
               <div className="flex items-center gap-1 text-emerald-400 text-xs animate-bounce">
                 <Sparkles size={14} />
                 <span>{language === 'zh' ? '新用户？先试试看！' : 'New here? Try it first!'}</span>
@@ -166,11 +166,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </div>
             <button
               onClick={onGuestLogin}
-              className="w-full flex items-center justify-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 transition py-3 px-4 rounded-xl font-medium"
+              className="w-full flex items-center justify-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 transition py-2.5 [@media(min-height:700px)]:py-3 px-4 rounded-xl font-medium min-h-[44px]"
             >
-              <span>{language === 'zh' ? '👀 以游客身份体验演示' : '👀 Explore demo as guest'}</span>
+              <span>{language === 'zh' ? '👀 以游客身份体验' : '👀 Explore demo as guest'}</span>
             </button>
-            <p className="text-xs text-gray-500 mt-2 text-center">
+            <p className="text-xs text-gray-500 mt-1 [@media(min-height:700px)]:mt-2 text-center">
               {language === 'zh' ? '无需登录，浏览示例数据' : 'No login required, browse sample data'}
             </p>
           </div>
@@ -182,32 +182,32 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   // Sign in with email mode
   if (mode === 'signin') {
     return (
-      <div className="flex flex-col items-center justify-start min-h-screen bg-gray-900 p-6 py-10 relative overflow-y-auto">
-        <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[100px]"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[100px]"></div>
+      <div className="flex flex-col items-center min-h-screen min-h-[100dvh] bg-gray-900 px-5 py-4 relative overflow-y-auto overscroll-contain" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 16px))' }}>
+        <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 [@media(min-height:700px)]:w-96 [@media(min-height:700px)]:h-96 bg-blue-600 rounded-full blur-[100px]"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-64 h-64 [@media(min-height:700px)]:w-96 [@media(min-height:700px)]:h-96 bg-purple-600 rounded-full blur-[100px]"></div>
         </div>
-        <div className="bg-gray-800/80 backdrop-blur p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 z-10 animate-fade-in-up">
+        <div className="bg-gray-800/80 backdrop-blur p-5 [@media(min-height:700px)]:p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 z-10 animate-fade-in-up my-auto">
           <button
             onClick={goBack}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition mb-6"
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition mb-4 [@media(min-height:700px)]:mb-6"
           >
             <ArrowLeft size={18} />
             {language === 'zh' ? '返回' : 'Back'}
           </button>
 
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-white mb-2">{language === 'zh' ? '欢迎回来' : 'Welcome Back'}</h1>
-            <p className="text-gray-400">{language === 'zh' ? '登录你的账号' : 'Sign in to your account'}</p>
+          <div className="text-center mb-4 [@media(min-height:700px)]:mb-8">
+            <h1 className="text-xl [@media(min-height:700px)]:text-2xl font-bold text-white mb-1 [@media(min-height:700px)]:mb-2">{language === 'zh' ? '欢迎回来' : 'Welcome Back'}</h1>
+            <p className="text-gray-400 text-sm [@media(min-height:700px)]:text-base">{language === 'zh' ? '登录你的账号' : 'Sign in to your account'}</p>
           </div>
 
           {error && (
-            <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-6 text-sm">
+            <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4 [@media(min-height:700px)]:mb-6 text-sm">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleEmailSignIn} className="space-y-4">
+          <form onSubmit={handleEmailSignIn} className="space-y-3 [@media(min-height:700px)]:space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">{t('email')}</label>
               <div className="relative">
@@ -217,7 +217,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition"
+                  className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition"
                 />
               </div>
             </div>
@@ -231,12 +231,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-10 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition"
+                  className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-10 pr-12 text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition p-1"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -246,14 +246,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-blue-900/20"
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white font-semibold py-3 px-6 rounded-xl min-h-[44px] transition shadow-lg shadow-blue-900/20"
             >
               {isLoading && <Loader2 size={18} className="animate-spin" />}
               {isLoading ? (language === 'zh' ? '登录中...' : 'Signing in...') : t('login')}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-gray-400 text-sm">
+          <p className="mt-4 [@media(min-height:700px)]:mt-6 text-center text-gray-400 text-sm">
             {t('noAccount')}{' '}
             <button 
               onClick={() => { resetForm(); setMode('signup'); }}
@@ -269,38 +269,38 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   // Sign up mode
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen bg-gray-900 p-6 py-10 relative overflow-y-auto">
-      <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[100px]"></div>
+    <div className="flex flex-col items-center min-h-screen min-h-[100dvh] bg-gray-900 px-5 py-4 relative overflow-y-auto overscroll-contain" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 16px))' }}>
+      <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 [@media(min-height:700px)]:w-96 [@media(min-height:700px)]:h-96 bg-blue-600 rounded-full blur-[100px]"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 [@media(min-height:700px)]:w-96 [@media(min-height:700px)]:h-96 bg-purple-600 rounded-full blur-[100px]"></div>
       </div>
-      <div className="bg-gray-800/80 backdrop-blur p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 z-10 animate-fade-in-up">
+      <div className="bg-gray-800/80 backdrop-blur p-5 [@media(min-height:700px)]:p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 z-10 animate-fade-in-up my-auto">
         <button
           onClick={goBack}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition mb-6"
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition mb-4 [@media(min-height:700px)]:mb-6"
         >
           <ArrowLeft size={18} />
           {language === 'zh' ? '返回' : 'Back'}
         </button>
 
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white mb-2">{language === 'zh' ? '创建账号' : 'Create Account'}</h1>
-          <p className="text-gray-400">{language === 'zh' ? '加入 TraceBook 开始记录你的美食足迹' : 'Join TraceBook to start mapping your experiences'}</p>
+        <div className="text-center mb-4 [@media(min-height:700px)]:mb-8">
+          <h1 className="text-xl [@media(min-height:700px)]:text-2xl font-bold text-white mb-1 [@media(min-height:700px)]:mb-2">{language === 'zh' ? '创建账号' : 'Create Account'}</h1>
+          <p className="text-gray-400 text-sm [@media(min-height:700px)]:text-base">{language === 'zh' ? '加入 TraceBook 开始记录你的美食足迹' : 'Join TraceBook to start mapping your experiences'}</p>
         </div>
 
         {error && (
-          <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-6 text-sm">
+          <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4 [@media(min-height:700px)]:mb-6 text-sm">
             {error}
           </div>
         )}
 
         {successMessage && (
-          <div className="bg-green-500/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-6 text-sm">
+          <div className="bg-green-500/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4 [@media(min-height:700px)]:mb-6 text-sm">
             {successMessage}
           </div>
         )}
 
-        <form onSubmit={handleEmailSignUp} className="space-y-4">
+        <form onSubmit={handleEmailSignUp} className="space-y-3 [@media(min-height:700px)]:space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">{t('displayName')}</label>
             <div className="relative">
@@ -310,7 +310,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder={language === 'zh' ? '你的名字' : 'Your name'}
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition"
+                className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition"
               />
             </div>
           </div>
@@ -324,7 +324,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition"
+                className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition"
               />
             </div>
           </div>
@@ -338,12 +338,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={language === 'zh' ? '至少6个字符' : 'At least 6 characters'}
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-10 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition"
+                className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-10 pr-12 text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition p-1"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -361,14 +361,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-blue-900/20"
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white font-semibold py-3 px-6 rounded-xl min-h-[44px] transition shadow-lg shadow-blue-900/20"
           >
             {isLoading && <Loader2 size={18} className="animate-spin" />}
             {isLoading ? (language === 'zh' ? '创建中...' : 'Creating account...') : (language === 'zh' ? '创建账号' : 'Create Account')}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-gray-400 text-sm">
+        <p className="mt-4 [@media(min-height:700px)]:mt-6 text-center text-gray-400 text-sm">
           {t('hasAccount')}{' '}
           <button 
             onClick={() => { resetForm(); setMode('signin'); }}

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, updateProfile } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, signOut, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, updateProfile, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { auth, googleProvider, db, storage } from '../firebaseConfig';
+import { auth, googleProvider, db, storage, signInAsGuest } from '../firebaseConfig';
 import { UserProfile, UserMap, ViewState } from '../types';
 
 export interface AppUser {
@@ -251,22 +251,28 @@ export function useAuth(): UseAuthReturn {
   };
 
   const loginAsGuest = async (): Promise<UserMap> => {
-    // Local-only guest user - no Firebase account created
-    const guestProfile: UserProfile = {
-      email: 'guest@tracebook.app',
-      status: 'approved',
-      emailVerified: true,
-      role: 'guest',
-      createdAt: new Date().toISOString()
-    };
+    // Use Firebase anonymous auth so guest uploads can access Firestore/Storage.
+    await setPersistence(auth, browserSessionPersistence);
+    const cred = await signInAsGuest();
+    const firebaseUser = cred.user;
 
     const guestUser: AppUser = {
-      uid: 'guest-user',
+      uid: firebaseUser.uid,
       displayName: 'Guest',
       photoURL: null,
       email: 'guest@tracebook.app',
       isAnonymous: true,
       emailVerified: true
+    };
+
+    const guestProfile: UserProfile = {
+      email: 'guest@tracebook.app',
+      displayName: 'Guest',
+      photoURL: null,
+      status: 'approved',
+      emailVerified: true,
+      role: 'guest',
+      createdAt: new Date().toISOString()
     };
 
     setUser(guestUser);

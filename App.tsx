@@ -333,28 +333,22 @@ function App() {
       const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' });
       const dateKey = now.toISOString().split('T')[0]; // YYYY-MM-DD
 
-      // Determine time period
-      let timePeriod: 'morning' | 'afternoon' | 'evening' | 'night';
-      let greeting: string;
-      let greetingZh: string;
+      // Determine time period with time-specific emoji
+      const getGreetingByHour = (h: number) => {
+        if (h >= 5 && h < 12) {
+          return { period: 'morning' as const, emoji: '☀️', en: 'Good morning', zh: '早上好' };
+        }
+        if (h >= 12 && h < 17) {
+          return { period: 'afternoon' as const, emoji: '🌤️', en: 'Good afternoon', zh: '下午好' };
+        }
+        if (h >= 17 && h < 21) {
+          return { period: 'evening' as const, emoji: '🌆', en: 'Good evening', zh: '晚上好' };
+        }
+        return { period: 'night' as const, emoji: '🌙', en: 'Good night', zh: '晚安' };
+      };
 
-      if (hour >= 5 && hour < 12) {
-        timePeriod = 'morning';
-        greeting = `Good morning ☀️`;
-        greetingZh = '早上好';
-      } else if (hour >= 12 && hour < 17) {
-        timePeriod = 'afternoon';
-        greeting = `Good afternoon 🌤️`;
-        greetingZh = '下午好';
-      } else if (hour >= 17 && hour < 21) {
-        timePeriod = 'evening';
-        greeting = `Good evening 🌆`;
-        greetingZh = '晚上好';
-      } else {
-        timePeriod = 'night';
-        greeting = `Good night 🌙`;
-        greetingZh = '晚安';
-      }
+      const { period: timePeriod, emoji, en: greetingEn, zh: greetingZh } = getGreetingByHour(hour);
+      const greeting = `${greetingEn} ${emoji}`;
 
       // Check if we've already sent a greeting for this time period today
       const greetingKey = `greeting_${user.uid}_${dateKey}_${timePeriod}`;
@@ -625,7 +619,7 @@ function App() {
   }
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-gray-900">
+    <div className="fixed inset-0 overflow-hidden bg-gray-900">
       {showMapView && (
         <>
           {/* Top Center Controls */}
@@ -838,7 +832,7 @@ function App() {
 
       {/* Floating Tutorial Button for Guest Users - Above map controls, right aligned */}
       {user?.isAnonymous && !isTutorialActive && showMapView && (
-        <div className="fixed bottom-52 right-4 z-30">
+        <div className="fixed bottom-64 right-4 z-30">
           <TutorialButton onClick={handleStartTutorial} isGuestUser={true} />
         </div>
       )}
