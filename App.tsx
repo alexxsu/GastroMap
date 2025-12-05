@@ -487,7 +487,6 @@ function App() {
             mapType={mapType}
             onZoomToMunicipality={handleZoomToMunicipality}
             onToggleMapType={handleToggleMapType}
-            onStartTutorial={handleStartTutorial}
           />
 
           {/* Member Avatars */}
@@ -520,6 +519,7 @@ function App() {
           }}
           onViewInfo={() => setViewState(ViewState.INFO)}
           onSiteManagement={() => setViewState(ViewState.SITE_MANAGEMENT)}
+          onStartTutorial={handleStartTutorial}
         />
       )}
 

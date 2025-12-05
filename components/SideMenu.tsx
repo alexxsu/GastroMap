@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, User as UserIcon, BarChart2, Layers, Info, Shield, Check } from 'lucide-react';
+import { X, User as UserIcon, BarChart2, Layers, Info, Shield, Check, GraduationCap } from 'lucide-react';
 import { AppUser } from '../hooks/useAuth';
 import { UserProfile } from '../types';
 import { useLanguage, Language } from '../hooks/useLanguage';
@@ -25,6 +25,7 @@ interface SideMenuProps {
   onManageMaps: () => void;
   onViewInfo: () => void;
   onSiteManagement?: () => void;
+  onStartTutorial?: () => void;
 }
 
 export const SideMenu: React.FC<SideMenuProps> = ({
@@ -38,7 +39,8 @@ export const SideMenu: React.FC<SideMenuProps> = ({
   onViewStats,
   onManageMaps,
   onViewInfo,
-  onSiteManagement
+  onSiteManagement,
+  onStartTutorial
 }) => {
   const { t, language, setLanguage } = useLanguage();
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
@@ -231,6 +233,30 @@ export const SideMenu: React.FC<SideMenuProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Help & Tutorial Section */}
+            <div className="pt-3 mt-3 border-t border-gray-700">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider px-4 mb-2">{t('helpSection')}</p>
+            </div>
+
+            {/* Tutorial */}
+            {onStartTutorial && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onStartTutorial();
+                }}
+                className="w-full flex items-center gap-4 px-4 py-3.5 text-gray-300 hover:text-white hover:bg-amber-900/30 rounded-xl transition-all duration-200 group"
+              >
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 group-hover:bg-amber-500/30 flex items-center justify-center transition-colors duration-200">
+                  <GraduationCap size={20} className="text-amber-400 group-hover:text-amber-300 transition-colors duration-200" />
+                </div>
+                <div className="text-left">
+                  <span className="font-medium block">{t('tutorial')}</span>
+                  <span className="text-xs text-gray-500">{t('learnToUse')}</span>
+                </div>
+              </button>
+            )}
 
             {/* About */}
             <button

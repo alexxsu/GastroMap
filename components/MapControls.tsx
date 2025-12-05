@@ -1,12 +1,11 @@
 import React, { useState, useImperativeHandle, forwardRef, useEffect, useRef } from 'react';
-import { Crosshair, Map, GraduationCap } from 'lucide-react';
+import { Crosshair, Map } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 
 interface MapControlsProps {
   mapType: 'satellite' | 'roadmap' | 'dark';
   onZoomToMunicipality: () => void;
   onToggleMapType: () => void;
-  onStartTutorial?: () => void;
 }
 
 export interface MapControlsRef {
@@ -16,11 +15,10 @@ export interface MapControlsRef {
 export const MapControls = forwardRef<MapControlsRef, MapControlsProps>(({
   mapType,
   onZoomToMunicipality,
-  onToggleMapType,
-  onStartTutorial
+  onToggleMapType
 }, ref) => {
   const { t } = useLanguage();
-  const [clickedButton, setClickedButton] = useState<'zoom' | 'mapType' | 'tutorial' | null>(null);
+  const [clickedButton, setClickedButton] = useState<'zoom' | 'mapType' | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const getMapTypeTitle = () => {
@@ -65,26 +63,8 @@ export const MapControls = forwardRef<MapControlsRef, MapControlsProps>(({
     e.currentTarget.blur();
   };
 
-  const handleTutorialClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    setClickedButton('tutorial');
-    onStartTutorial?.();
-    e.currentTarget.blur();
-  };
-
   return (
     <div ref={containerRef} data-tutorial="map-controls" className="absolute bottom-24 right-4 z-10 flex flex-col gap-3 pointer-events-auto">
-      {/* Tutorial Button - Top */}
-      {onStartTutorial && (
-        <button
-          onClick={handleTutorialClick}
-          className={`bg-gradient-to-br from-amber-600 to-orange-600 backdrop-blur border p-3 rounded-full shadow-lg text-white hover:from-amber-500 hover:to-orange-500 active:from-amber-700 active:to-orange-700 transition group focus:outline-none focus:ring-0
-            ${clickedButton === 'tutorial' ? 'border-amber-300 ring-2 ring-amber-400/50' : 'border-amber-500/50'}
-          `}
-          title={t('startTutorial')}
-        >
-          <GraduationCap size={24} className={`transition ${clickedButton === 'tutorial' ? 'text-amber-200' : 'group-hover:text-amber-100'}`} />
-        </button>
-      )}
       <button
         onClick={handleZoomClick}
         className={`bg-gray-800/90 backdrop-blur border p-3 rounded-full shadow-lg text-white hover:bg-gray-700 active:bg-gray-600 transition group focus:outline-none focus:ring-0
