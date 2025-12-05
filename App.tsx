@@ -23,6 +23,7 @@ import EditVisitModal from './components/EditVisitModal';
 import StatsModal from './components/StatsModal';
 import MapManagementModal from './components/MapManagementModal';
 import { SiteManagementModal } from './components/SiteManagementModal';
+import { Tutorial } from './components/Tutorial';
 
 // New extracted components
 import { LoginScreen } from './components/LoginScreen';
@@ -140,6 +141,26 @@ function App() {
   const [isUserDetailClosing, setIsUserDetailClosing] = useState(false);
   const [isCompactCardOpen, setIsCompactCardOpen] = useState(false);
   const [editingData, setEditingData] = useState<{ restaurant: Restaurant; visit: Visit } | null>(null);
+  const [isTutorialActive, setIsTutorialActive] = useState(false);
+
+  // Tutorial handlers
+  const handleStartTutorial = useCallback(() => {
+    // Close any open menus/modals
+    setIsMenuOpen(false);
+    setIsCompactCardOpen(false);
+    setIsUserDetailOpen(false);
+    closeSearch();
+    closeFilter();
+    setIsTutorialActive(true);
+  }, [closeSearch, closeFilter]);
+
+  const handleTutorialComplete = useCallback(() => {
+    setIsTutorialActive(false);
+  }, []);
+
+  const handleTutorialSkip = useCallback(() => {
+    setIsTutorialActive(false);
+  }, []);
 
   // Derive view state from user/profile status
   React.useEffect(() => {
@@ -466,6 +487,7 @@ function App() {
             mapType={mapType}
             onZoomToMunicipality={handleZoomToMunicipality}
             onToggleMapType={handleToggleMapType}
+            onStartTutorial={handleStartTutorial}
           />
 
           {/* Member Avatars */}
@@ -605,6 +627,12 @@ function App() {
           onClose={() => setViewState(ViewState.MAP)}
         />
       )}
+
+      {/* Tutorial Overlay */}
+      <Tutorial
+        isActive={isTutorialActive}
+        onClose={handleTutorialComplete}
+      />
     </div>
   );
 }

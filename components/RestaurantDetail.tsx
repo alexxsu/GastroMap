@@ -246,7 +246,7 @@ const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
             await navigator.share({
               files: [file],
               title: restaurant.name,
-              text: `Check out my experience at ${restaurant.name} on GourmetMaps!`
+              text: `Check out my experience at ${restaurant.name} on TraceBook!`
             });
           } catch (shareError) {
              downloadImage(canvas);

@@ -21,6 +21,8 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
   const { t, language } = useLanguage();
   const [isClosing, setIsClosing] = useState(false);
   const [currentView, setCurrentView] = useState<ManagementView>('menu');
+  const [isViewTransitioning, setIsViewTransitioning] = useState(false);
+  const [transitionDirection, setTransitionDirection] = useState<'forward' | 'back'>('forward');
   const [users, setUsers] = useState<UserWithId[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -31,8 +33,22 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
     setTimeout(onClose, 200);
   };
 
+  const navigateTo = (view: ManagementView) => {
+    setTransitionDirection('forward');
+    setIsViewTransitioning(true);
+    setTimeout(() => {
+      setCurrentView(view);
+      setIsViewTransitioning(false);
+    }, 150);
+  };
+
   const goBack = () => {
-    setCurrentView('menu');
+    setTransitionDirection('back');
+    setIsViewTransitioning(true);
+    setTimeout(() => {
+      setCurrentView('menu');
+      setIsViewTransitioning(false);
+    }, 150);
   };
 
   // Fetch all users
@@ -185,9 +201,15 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
           
           {/* Menu View */}
           {currentView === 'menu' && (
-            <div className="p-4 space-y-2">
+            <div className={`p-4 space-y-2 transition-all duration-150 ${
+              isViewTransitioning 
+                ? transitionDirection === 'back' 
+                  ? 'opacity-0 translate-x-4' 
+                  : 'opacity-0 -translate-x-4'
+                : 'opacity-100 translate-x-0'
+            }`}>
               <button
-                onClick={() => setCurrentView('users')}
+                onClick={() => navigateTo('users')}
                 className="w-full flex items-center justify-between p-4 bg-gray-700/50 hover:bg-gray-700 rounded-xl transition group"
               >
                 <div className="flex items-center gap-3">
@@ -201,17 +223,18 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
                 </div>
                 <ChevronRight size={20} className="text-gray-500 group-hover:text-white transition" />
               </button>
-              
-              {/* Placeholder for future options */}
-              <div className="pt-4 border-t border-gray-700 mt-4">
-                <p className="text-xs text-gray-500 text-center">{t('moreOptionsSoon')}</p>
-              </div>
             </div>
           )}
 
           {/* User Management View */}
           {currentView === 'users' && (
-            <div className="p-4">
+            <div className={`p-4 transition-all duration-150 ${
+              isViewTransitioning 
+                ? transitionDirection === 'forward' 
+                  ? 'opacity-0 translate-x-4' 
+                  : 'opacity-0 -translate-x-4'
+                : 'opacity-100 translate-x-0'
+            }`}>
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Loader2 size={32} className="animate-spin text-blue-400 mb-3" />

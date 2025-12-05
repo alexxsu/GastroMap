@@ -53,7 +53,7 @@ export function useAuth(): UseAuthReturn {
     return () => unsubscribe();
   }, []);
 
-  // Check user approval status for real users
+  // Check user approval status for real users and normalize profile structure
   useEffect(() => {
     const checkStatus = async () => {
       if (!user || user.isAnonymous) return;
@@ -64,31 +64,72 @@ export function useAuth(): UseAuthReturn {
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
-          const profile = userSnap.data() as UserProfile;
+          const rawProfile = userSnap.data();
           const updates: Partial<UserProfile> = {};
           
+          // === PROFILE NORMALIZATION ===
+          // Ensure all required fields exist with correct types
+          
           // Sync emailVerified from Firebase Auth
-          if (profile.emailVerified !== user.emailVerified) {
+          if (rawProfile.emailVerified !== user.emailVerified) {
             updates.emailVerified = user.emailVerified;
           }
           
+          // Ensure email exists
+          if (!rawProfile.email && user.email) {
+            updates.email = user.email;
+          }
+          
           // Sync displayName from Firebase Auth if profile doesn't have it
-          if (!profile.displayName && user.displayName) {
+          if (!rawProfile.displayName && user.displayName) {
             updates.displayName = user.displayName;
           }
           
           // Sync photoURL from Firebase Auth if profile doesn't have it
-          if (!profile.photoURL && user.photoURL) {
+          if (!rawProfile.photoURL && user.photoURL) {
             updates.photoURL = user.photoURL;
+          }
+          
+          // Ensure status exists (default to 'approved' for legacy accounts without status)
+          if (!rawProfile.status) {
+            // Legacy accounts that were created before status system should be approved
+            updates.status = 'approved';
+          }
+          
+          // Ensure role exists (default to 'user', preserve 'admin' if exists)
+          if (!rawProfile.role) {
+            updates.role = 'user';
+          }
+          
+          // Ensure createdAt exists
+          if (!rawProfile.createdAt) {
+            updates.createdAt = new Date().toISOString();
+          }
+          
+          // Ensure joinedMaps is an array
+          if (rawProfile.joinedMaps && !Array.isArray(rawProfile.joinedMaps)) {
+            updates.joinedMaps = [];
           }
           
           // Apply updates if any
           if (Object.keys(updates).length > 0) {
+            console.log('Normalizing user profile:', user.uid, updates);
             await updateDoc(userRef, updates);
-            Object.assign(profile, updates);
           }
           
-          setUserProfile(profile);
+          // Create normalized profile object
+          const normalizedProfile: UserProfile = {
+            email: rawProfile.email || user.email || 'unknown',
+            displayName: rawProfile.displayName || user.displayName,
+            photoURL: rawProfile.photoURL || user.photoURL || null,
+            status: rawProfile.status || updates.status || 'pending',
+            emailVerified: rawProfile.emailVerified ?? user.emailVerified ?? false,
+            role: rawProfile.role || updates.role || 'user',
+            createdAt: rawProfile.createdAt || updates.createdAt || new Date().toISOString(),
+            joinedMaps: Array.isArray(rawProfile.joinedMaps) ? rawProfile.joinedMaps : []
+          };
+          
+          setUserProfile(normalizedProfile);
         } else {
           const newProfile: UserProfile = {
             email: user.email || 'unknown',

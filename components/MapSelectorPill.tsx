@@ -79,6 +79,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
     <>
       {/* Pill Button */}
       <button
+        data-tutorial="map-pill"
         onClick={() => setIsCompactCardOpen(!isCompactCardOpen)}
         className={`flex items-center gap-2.5 pl-2 pr-4 py-1.5 mt-1 rounded-full backdrop-blur border shadow-lg transition-all duration-200 text-sm font-medium pointer-events-auto self-start ${getPillStyles()}`}
       >
@@ -102,7 +103,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
           {/* Map type label */}
           <div className="mt-1 text-[10px]">
             {activeMap.isDefault ? (
-              <span className="text-blue-400">Your Default Map</span>
+              <span className="text-blue-400">Your Default Map - Private</span>
             ) : activeMap.ownerUid === user?.uid ? (
               <span className="text-purple-400">Shared Map (Owner)</span>
             ) : (
@@ -125,10 +126,10 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
               >
                 {/* Default Maps Section */}
                 {userOwnMaps.filter(m => m.isDefault).length > 0 && (
-                  <optgroup label="Your Default Map">
+                  <optgroup label="Your Default Map - Private">
                     {userOwnMaps.filter(m => m.isDefault).map((m) => (
                       <option key={m.id} value={m.id}>
-                        🔒 {m.name}
+                        🔒 {m.name} - Private
                       </option>
                     ))}
                   </optgroup>
@@ -186,7 +187,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
               <span className="text-gray-200">{restaurantsCount}</span>
             </div>
             <div className="flex gap-1">
-              <span className="text-gray-500">Visible:</span>
+              <span className="text-gray-500">Filtered:</span>
               <span className="text-gray-200">{filteredCount}</span>
             </div>
           </div>

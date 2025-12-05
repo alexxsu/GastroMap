@@ -108,12 +108,12 @@ export const SideMenu: React.FC<SideMenuProps> = ({
 
       {/* Menu Panel */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 bg-gray-900 border-r border-gray-700 z-[101] shadow-2xl transform transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-0 h-full w-72 bg-gray-900 border-r border-gray-700 z-[101] shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${
           isMenuAnimatingIn && !isMenuClosing ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Menu Header */}
-        <div className="p-5 border-b border-gray-700">
+        {/* Menu Header - Fixed */}
+        <div className="flex-shrink-0 p-5 border-b border-gray-700">
           <div className="flex items-center gap-3">
             <img src="/logo.svg" className="w-10 h-10 object-contain" alt="Logo" />
             <div>
@@ -123,31 +123,33 @@ export const SideMenu: React.FC<SideMenuProps> = ({
           </div>
         </div>
 
-        {/* User Profile Section - Separated */}
-        <div className="p-3 border-b border-gray-700">
-          <button
-            onClick={() => {
-              onClose();
-              onOpenUserDetail();
-            }}
-            className="w-full flex items-center gap-4 px-4 py-3.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200 group"
-          >
-            {user?.photoURL ? (
-              <img src={user.photoURL} alt="User" className="w-10 h-10 rounded-full border-2 border-gray-700 group-hover:border-gray-600 transition-colors duration-200" referrerPolicy="no-referrer" />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-800 group-hover:bg-gray-700 flex items-center justify-center transition-colors duration-200">
-                <UserIcon size={20} className="text-gray-400 group-hover:text-white transition-colors duration-200" />
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto">
+          {/* User Profile Section - Separated */}
+          <div className="p-3 border-b border-gray-700">
+            <button
+              onClick={() => {
+                onClose();
+                onOpenUserDetail();
+              }}
+              className="w-full flex items-center gap-4 px-4 py-3.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200 group"
+            >
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="User" className="w-10 h-10 rounded-full border-2 border-gray-700 group-hover:border-gray-600 transition-colors duration-200" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gray-800 group-hover:bg-gray-700 flex items-center justify-center transition-colors duration-200">
+                  <UserIcon size={20} className="text-gray-400 group-hover:text-white transition-colors duration-200" />
+                </div>
+              )}
+              <div className="text-left">
+                <span className="font-medium block">{user?.displayName || userProfile?.displayName || t('user')}</span>
+                <span className="text-xs text-gray-500">{t('viewProfile')}</span>
               </div>
-            )}
-            <div className="text-left">
-              <span className="font-medium block">{user?.displayName || userProfile?.displayName || t('user')}</span>
-              <span className="text-xs text-gray-500">{t('viewProfile')}</span>
-            </div>
-          </button>
-        </div>
+            </button>
+          </div>
 
-        {/* Menu Items */}
-        <div className="p-3 space-y-1">
+          {/* Menu Items */}
+          <div className="p-3 space-y-1">
             {/* Map Management */}
             <button
               onClick={() => {
@@ -271,9 +273,10 @@ export const SideMenu: React.FC<SideMenuProps> = ({
               </>
             )}
           </div>
+        </div>
 
-        {/* Menu Footer - Close Button */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
+        {/* Menu Footer - Fixed at bottom */}
+        <div className="flex-shrink-0 p-4 border-t border-gray-700 bg-gray-900">
           <button
             onClick={onClose}
             className="w-full flex items-center justify-center gap-2 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200"
