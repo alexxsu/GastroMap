@@ -372,6 +372,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               isSearchClosing ? 'opacity-0 -translate-y-2 scale-95' : 'opacity-100 translate-y-0 scale-100 animate-scale-in'
             }`}
             style={{ scrollbarGutter: 'stable' }}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           >
             {categorizedResults.sections.length > 0 ? (
               <>
