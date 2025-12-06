@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Lock, Users, Globe, Settings } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Lock, Users, Globe, Settings, ChevronDown, AlertCircle } from 'lucide-react';
 import { UserMap, UserProfile } from '../types';
 import { AppUser } from '../hooks/useAuth';
 
@@ -167,79 +167,63 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
             )}
           </div>
 
-          {/* Map selector dropdown - for non-guest, non-admin users with maps */}
-          {!user?.isAnonymous && userProfile?.role !== 'admin' && (userOwnMaps.length > 0 || userSharedMaps.length > 0 || userJoinedMaps.length > 0) && (
+          {/* Guest locked state message */}
+          {isGuest && (
             <div className="mt-2 pt-2 border-t border-gray-700">
-              <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Switch Map</label>
-              <select
-                className="w-full bg-gray-800 text-gray-100 text-[11px] rounded-md px-2 py-1.5 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                value={activeMap.id}
-                onChange={(e) => {
-                  const allUserMaps = [...userOwnMaps, ...userSharedMaps, ...userJoinedMaps];
-                  const selected = allUserMaps.find((m) => m.id === e.target.value);
-                  if (selected) onSelectMap(selected);
-                }}
-              >
-                {/* Default Maps Section */}
-                {userOwnMaps.filter(m => m.isDefault).length > 0 && (
-                  <optgroup label="Your Default Map - Private">
-                    {userOwnMaps.filter(m => m.isDefault).map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {optionLabel(m)}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-
-                {/* Created Shared Maps Section */}
-                {userSharedMaps.length > 0 && (
-                  <optgroup label="Shared Maps (Owner)">
-                    {userSharedMaps.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {optionLabel(m)}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-
-                {/* Joined Shared Maps Section */}
-                {userJoinedMaps.length > 0 && (
-                  <optgroup label="Shared Maps (Joined)">
-                    {userJoinedMaps.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {optionLabel(m)}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
+              <div className="flex items-center gap-2 px-2 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                <AlertCircle size={14} className="text-amber-400 flex-shrink-0" />
+                <div className="text-[11px] text-gray-400">
+                  <span className="text-amber-400">Demo mode</span> - Sign in to create and switch between your own maps
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Admin all maps selector - inline collapsible */}
-          {userProfile?.role === 'admin' && allMaps.length > 0 && (
+          {/* Unified map selector for non-guest users */}
+          {!isGuest && (userProfile?.role === 'admin' ? allMaps.length > 0 : (userOwnMaps.length > 0 || userSharedMaps.length > 0 || userJoinedMaps.length > 0)) && (
             <div className="mt-2 pt-2 border-t border-gray-700">
-              <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Admin: All Maps</label>
+              <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">
+                {userProfile?.role === 'admin' ? 'Admin: All Maps' : 'Switch Map'}
+              </label>
               <button
                 onClick={() => setIsAdminListOpen(!isAdminListOpen)}
-                className="w-full text-left text-[11px] text-gray-100 px-1.5 py-1 rounded-md hover:text-white hover:bg-gray-800 transition"
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg border transition-all duration-200 ${
+                  isAdminListOpen
+                    ? 'bg-blue-600/20 border-blue-500/40 text-white'
+                    : 'bg-gray-800/60 border-gray-700 text-gray-200 hover:bg-gray-800 hover:border-gray-600'
+                }`}
               >
-                {getOwnerDisplayName(activeMap) + ' - ' + activeMap.name}
+                <div className="flex items-center gap-2 min-w-0">
+                  {activeMap.visibility === 'public' ? (
+                    <Globe size={14} className="text-green-400 flex-shrink-0" />
+                  ) : activeMap.isDefault ? (
+                    <Lock size={14} className="text-blue-400 flex-shrink-0" />
+                  ) : (
+                    <Users size={14} className="text-purple-400 flex-shrink-0" />
+                  )}
+                  <span className="text-sm truncate">
+                    {userProfile?.role === 'admin' ? `${getOwnerDisplayName(activeMap)} - ${activeMap.name}` : activeMap.name}
+                  </span>
+                </div>
+                <ChevronDown size={16} className={`text-gray-400 flex-shrink-0 transition-transform duration-200 ${isAdminListOpen ? 'rotate-180' : ''}`} />
               </button>
-              {isAdminListOpen && (
-                <div 
-                  className="mt-2 max-h-60 overflow-y-scroll rounded-lg border border-gray-700 bg-gray-900/90 animate-scale-in"
+
+              {/* Collapsible map list */}
+              <div className={`overflow-hidden transition-all duration-300 ease-out ${isAdminListOpen ? 'max-h-60 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+                <div
+                  className="max-h-56 overflow-y-scroll rounded-lg border border-gray-700 bg-gray-900/90"
                   style={{ scrollbarGutter: 'stable' }}
                 >
                   {(() => {
-                    const sections = categorizeMaps(allMaps);
+                    const mapsToShow = userProfile?.role === 'admin' ? allMaps : [...userOwnMaps, ...userSharedMaps, ...userJoinedMaps];
+                    const sections = categorizeMaps(mapsToShow);
                     const { myMaps, otherMaps } = getGroupedSections(sections);
                     return (
                       <>
                         {/* My Maps Category */}
                         {myMaps.length > 0 && (
-                          <div className="border-b border-gray-700">
-                            <div className="px-2 py-1.5 bg-gray-800/50 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+                          <div className={otherMaps.length > 0 ? 'border-b border-gray-700' : ''}>
+                            <div className="px-2 py-1.5 bg-gray-800/50 text-[10px] uppercase tracking-wider text-gray-400 font-semibold sticky top-0 backdrop-blur-sm">
                               My Maps
                             </div>
                             {myMaps.map(section => (
@@ -254,7 +238,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                                         setIsAdminListOpen(false);
                                         setIsCompactCardOpen(false);
                                       }}
-                                      className={`w-full text-left px-2 py-1 rounded cursor-pointer transition ${
+                                      className={`w-full text-left px-2 py-1.5 rounded cursor-pointer transition ${
                                         map.id === activeMap.id
                                           ? 'bg-blue-600/30 text-white'
                                           : 'text-gray-200 hover:bg-gray-800/70'
@@ -281,7 +265,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                         {/* Other Maps Category */}
                         {otherMaps.length > 0 && (
                           <div>
-                            <div className="px-2 py-1.5 bg-gray-800/50 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+                            <div className="px-2 py-1.5 bg-gray-800/50 text-[10px] uppercase tracking-wider text-gray-400 font-semibold sticky top-0 backdrop-blur-sm">
                               Other Maps
                             </div>
                             {otherMaps.map(section => (
@@ -296,7 +280,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                                         setIsAdminListOpen(false);
                                         setIsCompactCardOpen(false);
                                       }}
-                                      className={`w-full text-left px-2 py-1 rounded cursor-pointer transition ${
+                                      className={`w-full text-left px-2 py-1.5 rounded cursor-pointer transition ${
                                         map.id === activeMap.id
                                           ? 'bg-blue-600/30 text-white'
                                           : 'text-gray-200 hover:bg-gray-800/70'
@@ -325,7 +309,7 @@ export const MapSelectorPill: React.FC<MapSelectorPillProps> = ({
                     );
                   })()}
                 </div>
-              )}
+              </div>
             </div>
           )}
 

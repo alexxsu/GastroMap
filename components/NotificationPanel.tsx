@@ -84,27 +84,28 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-[9990] bg-black/40 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-[9990] bg-black/40 transition-opacity duration-400 ${
           isClosing ? 'opacity-0' : 'opacity-100'
         }`}
+        style={{ transitionDuration: '400ms' }}
         onClick={handleBackdropClick}
       />
 
       {/* Panel container - positioned under notification button */}
       {/* On mobile: right-4, On wider screens: aligned with centered header's right edge */}
       {/* Header is max-w-sm (24rem), panel is w-80 (20rem). To align right edges: left = 50%, translateX = -8rem */}
-      <div 
-        className="fixed top-20 z-[9991] w-80 max-h-[70vh] pointer-events-auto 
-          right-4 
+      <div
+        className="fixed top-20 z-[9991] w-80 max-h-[70vh] pointer-events-auto
+          right-4
           sm:right-auto sm:left-1/2 sm:-translate-x-32"
       >
         <div
-          className={`bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden transition-all duration-300 ease-out ${
+          className={`bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden transition-all ease-out ${
             isClosing
-              ? 'opacity-0 -translate-y-2 scale-95'
+              ? 'opacity-0 -translate-y-3 scale-95'
               : 'opacity-100 translate-y-0 scale-100'
           }`}
-          style={{ transitionProperty: 'opacity, transform' }}
+          style={{ transitionDuration: '400ms', transitionProperty: 'opacity, transform' }}
         >
           {/* Header */}
           <div className="p-3 border-b border-gray-700 flex items-center justify-between bg-gray-900/50">

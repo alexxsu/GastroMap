@@ -1,10 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Menu, Search, Filter, X, Bell, Lock, Users, Globe, Sparkles, ChevronUp } from 'lucide-react';
+import { Menu, Search, Filter, X, Bell, Lock, Users, Globe, Sparkles, ChevronUp, ChevronDown } from 'lucide-react';
 import { Restaurant, AppNotification, UserMap } from '../types';
 import { GRADES, getGradeColor } from '../utils/rating';
 import { NotificationPanel } from './NotificationPanel';
 import { useLanguage } from '../hooks/useLanguage';
 import { SearchResultGroup } from '../hooks/useSearch';
+
+// Helper to highlight matching text
+const HighlightedText: React.FC<{ text: string; query: string }> = ({ text, query }) => {
+  if (!query.trim()) return <>{text}</>;
+
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase().trim();
+  const index = lowerText.indexOf(lowerQuery);
+
+  if (index === -1) return <>{text}</>;
+
+  const before = text.slice(0, index);
+  const match = text.slice(index, index + query.trim().length);
+  const after = text.slice(index + query.trim().length);
+
+  return (
+    <>
+      {before}
+      <span className="font-bold text-blue-300">{match}</span>
+      {after}
+    </>
+  );
+};
 
 interface HeaderBarProps {
   // Search props
@@ -189,7 +212,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       setTimeout(() => {
         setIsNotifOpen(false);
         setIsNotifClosing(false);
-      }, 300);
+      }, 400);
     } else {
       setIsNotifOpen(true);
     }
@@ -200,7 +223,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     setTimeout(() => {
       setIsNotifOpen(false);
       setIsNotifClosing(false);
-    }, 300);
+    }, 400);
   };
 
   return (
@@ -369,17 +392,21 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       </div>
 
       {/* Search Results */}
-      {isSearchFocused && searchResults.length > 0 && (
+      {(isSearchFocused || isSearchClosing) && searchResults.length > 0 && (
         <>
           <div
-            className="fixed inset-0 z-10 bg-black/30 transition-opacity duration-200"
+            className={`fixed inset-0 z-10 bg-black/30 transition-opacity duration-300 ${
+              isSearchClosing ? 'opacity-0' : 'opacity-100'
+            }`}
             onClick={() => {
               setAdminSearchMode('list');
               closeSearch();
             }}
           ></div>
-          <div 
-            className="mt-2 border-t border-gray-700 pt-2 max-h-72 overflow-y-scroll rounded-lg bg-gray-800/80 backdrop-blur-md animate-scale-in relative z-20"
+          <div
+            className={`mt-2 border-t border-gray-700 pt-2 max-h-72 overflow-y-scroll rounded-lg bg-gray-800/80 backdrop-blur-md relative z-20 transition-all duration-300 ease-out ${
+              isSearchClosing ? 'opacity-0 -translate-y-2 scale-95' : 'opacity-100 translate-y-0 scale-100 animate-scale-in'
+            }`}
             style={{ scrollbarGutter: 'stable' }}
           >
             {categorizedResults.sections.length > 0 ? (
@@ -400,8 +427,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                               <button
                                 onClick={(e) => { e.stopPropagation(); toggleMapOpen(group.map.id); }}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border transition-all duration-200 ease-out ${
-                                  isOpen 
-                                    ? 'bg-blue-600/20 border-blue-500/30 shadow-sm' 
+                                  isOpen
+                                    ? 'bg-blue-600/20 border-blue-500/30 shadow-sm'
                                     : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600 hover:bg-gray-800/70'
                                 }`}
                               >
@@ -412,18 +439,25 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                                     <span className="text-[10px] text-gray-500">{mapSubtext(group.map)}</span>
                                   </div>
                                 </div>
-                                <span className="text-[10px] text-gray-400 ml-2 flex-shrink-0">{group.matches.length} pins</span>
+                                <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                                  <span className="text-[10px] text-gray-400">{group.matches.length} pins</span>
+                                  <ChevronDown size={14} className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                                </div>
                               </button>
                               <div className={`overflow-hidden transition-all duration-200 ease-out ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                <div className="mt-1 flex flex-col gap-0.5 pl-3 pr-1 pb-1">
+                                <div className="mt-1 flex flex-col gap-0.5 ml-5 border-l-2 border-gray-700/50 pl-2 pr-1 pb-1">
                                   {group.matches.map(r => (
                                     <button
                                       key={r.id}
                                       onClick={(e) => { e.stopPropagation(); onSearchSelect(r, group.map); }}
                                       className="w-full text-left px-3 py-2 hover:bg-gray-700/60 rounded-md text-sm text-gray-200 hover:text-white flex flex-col border border-transparent hover:border-gray-600/50 transition-all duration-150"
                                     >
-                                      <span className="font-medium truncate">{r.name}</span>
-                                      <span className="text-[10px] text-gray-500 truncate">{r.address}</span>
+                                      <span className="font-medium truncate">
+                                        <HighlightedText text={r.name} query={searchQuery} />
+                                      </span>
+                                      <span className="text-[10px] text-gray-500 truncate">
+                                        <HighlightedText text={r.address} query={searchQuery} />
+                                      </span>
                                     </button>
                                   ))}
                                 </div>
@@ -452,8 +486,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                               <button
                                 onClick={(e) => { e.stopPropagation(); toggleMapOpen(group.map.id); }}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border transition-all duration-200 ease-out ${
-                                  isOpen 
-                                    ? 'bg-blue-600/20 border-blue-500/30 shadow-sm' 
+                                  isOpen
+                                    ? 'bg-blue-600/20 border-blue-500/30 shadow-sm'
                                     : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600 hover:bg-gray-800/70'
                                 }`}
                               >
@@ -464,18 +498,25 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                                     <span className="text-[10px] text-gray-500">{mapSubtext(group.map)}</span>
                                   </div>
                                 </div>
-                                <span className="text-[10px] text-gray-400 ml-2 flex-shrink-0">{group.matches.length} pins</span>
+                                <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                                  <span className="text-[10px] text-gray-400">{group.matches.length} pins</span>
+                                  <ChevronDown size={14} className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                                </div>
                               </button>
                               <div className={`overflow-hidden transition-all duration-200 ease-out ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                <div className="mt-1 flex flex-col gap-0.5 pl-3 pr-1 pb-1">
+                                <div className="mt-1 flex flex-col gap-0.5 ml-5 border-l-2 border-gray-700/50 pl-2 pr-1 pb-1">
                                   {group.matches.map(r => (
                                     <button
                                       key={r.id}
                                       onClick={(e) => { e.stopPropagation(); onSearchSelect(r, group.map); }}
                                       className="w-full text-left px-3 py-2 hover:bg-gray-700/60 rounded-md text-sm text-gray-200 hover:text-white flex flex-col border border-transparent hover:border-gray-600/50 transition-all duration-150"
                                     >
-                                      <span className="font-medium truncate">{r.name}</span>
-                                      <span className="text-[10px] text-gray-500 truncate">{r.address}</span>
+                                      <span className="font-medium truncate">
+                                        <HighlightedText text={r.name} query={searchQuery} />
+                                      </span>
+                                      <span className="text-[10px] text-gray-500 truncate">
+                                        <HighlightedText text={r.address} query={searchQuery} />
+                                      </span>
                                     </button>
                                   ))}
                                 </div>
