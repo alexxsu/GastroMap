@@ -76,13 +76,13 @@ const getCircleStyle = (isDarkMode: boolean, isSatellite: boolean) => {
 const ZOOM_SCALE_CONFIG = {
   maxZoom: 18,      // At this zoom, markers are at full size
   minZoom: 10,      // At this zoom, markers are at minimum size
-  maxScale: 1.0,    // Full size scale
-  minScale: 0.6,    // Minimum scale (larger than before)
+  maxScale: 1.35,   // Much larger full size scale
+  minScale: 0.85,   // Much larger minimum scale
 };
 
 // Clustering configuration
 const CLUSTER_CONFIG = {
-  gridSize: 80,          // Pixel grid size for clustering
+  gridSize: 90,          // Pixel grid size for clustering
   minZoomForClustering: 15, // Start clustering below this zoom
   maxPhotosInCluster: 4, // Max photos to show in cluster stack
 };
@@ -127,13 +127,13 @@ const createClusterElement = (
 
   const count = restaurants.length;
 
-  // Create stacked photos cluster
+  // Create stacked photos cluster - much more prominent
   container.innerHTML = `
     <div style="
       position: relative;
-      width: 72px;
-      height: 88px;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+      width: 95px;
+      height: 115px;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.5));
     ">
       <!-- Stacked cards effect - back cards -->
       ${photos.length >= 3 ? `
@@ -141,13 +141,14 @@ const createClusterElement = (
           position: absolute;
           top: 0;
           left: 50%;
-          transform: translateX(-50%) rotate(12deg);
-          width: 48px;
-          height: 48px;
+          transform: translateX(-50%) rotate(15deg);
+          width: 62px;
+          height: 62px;
           background: #fffef8;
-          border: 2px solid #d4c5a9;
-          border-radius: 6px;
+          border: 3px solid #d4c5a9;
+          border-radius: 8px;
           overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         ">
           ${photos[2] ? `<img src="${photos[2]}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';" />` : ''}
         </div>
@@ -156,15 +157,16 @@ const createClusterElement = (
       ${photos.length >= 2 ? `
         <div style="
           position: absolute;
-          top: 4px;
+          top: 6px;
           left: 50%;
-          transform: translateX(-50%) rotate(-6deg);
-          width: 48px;
-          height: 48px;
+          transform: translateX(-50%) rotate(-8deg);
+          width: 62px;
+          height: 62px;
           background: #fffef8;
-          border: 2px solid #d4c5a9;
-          border-radius: 6px;
+          border: 3px solid #d4c5a9;
+          border-radius: 8px;
           overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         ">
           ${photos[1] ? `<img src="${photos[1]}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';" />` : ''}
         </div>
@@ -173,39 +175,41 @@ const createClusterElement = (
       <!-- Front card -->
       <div style="
         position: absolute;
-        top: 8px;
+        top: 12px;
         left: 50%;
         transform: translateX(-50%) rotate(2deg);
-        width: 52px;
-        height: 52px;
+        width: 68px;
+        height: 68px;
         background: #fffef8;
-        border: 2px solid #d4c5a9;
-        border-radius: 8px;
+        border: 3px solid #d4c5a9;
+        border-radius: 10px;
         overflow: hidden;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
       ">
         ${photos[0] ? `
           <img src="${photos[0]}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-          <div style="display:none;width:100%;height:100%;background:#f3f4f6;align-items:center;justify-content:center;font-size:20px;position:absolute;top:0;left:0;">🍽️</div>
+          <div style="display:none;width:100%;height:100%;background:#f3f4f6;align-items:center;justify-content:center;font-size:26px;position:absolute;top:0;left:0;">🍽️</div>
         ` : `
-          <div style="width:100%;height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:20px;">🍽️</div>
+          <div style="width:100%;height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:26px;">🍽️</div>
         `}
       </div>
 
-      <!-- Count badge -->
+      <!-- Count badge - more prominent -->
       <div style="
         position: absolute;
-        top: 0;
-        right: 2px;
-        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        top: -2px;
+        right: 0px;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
         color: white;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 2px 6px;
-        border-radius: 10px;
-        border: 2px solid #fffef8;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        font-size: 14px;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 12px;
+        border: 3px solid #fffef8;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
         z-index: 5;
+        min-width: 24px;
+        text-align: center;
       ">${count}</div>
 
       <!-- Pointer/tail -->
@@ -218,18 +222,18 @@ const createClusterElement = (
         <div style="
           width: 0;
           height: 0;
-          border-left: 10px solid transparent;
-          border-right: 10px solid transparent;
-          border-top: 12px solid #d4c5a9;
+          border-left: 12px solid transparent;
+          border-right: 12px solid transparent;
+          border-top: 14px solid #d4c5a9;
         "></div>
         <div style="
           width: 0;
           height: 0;
-          border-left: 8px solid transparent;
-          border-right: 8px solid transparent;
-          border-top: 10px solid #fffef8;
-          margin-top: -12px;
-          margin-left: 2px;
+          border-left: 9px solid transparent;
+          border-right: 9px solid transparent;
+          border-top: 11px solid #fffef8;
+          margin-top: -14px;
+          margin-left: 3px;
         "></div>
       </div>
     </div>
