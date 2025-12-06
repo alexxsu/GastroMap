@@ -73,12 +73,12 @@ const getCircleStyle = (isDarkMode: boolean, isSatellite: boolean) => {
 };
 
 // Zoom-based scaling configuration
-// Markers stay at base size until zoomed out to ~500m radius, then scale up
+// Markers are larger when zoomed in, smaller when zoomed out
 const ZOOM_SCALE_CONFIG = {
-  maxZoom: 15,      // ~500m radius - scaling starts here when zooming out further
-  minZoom: 10,      // At this zoom (far), markers are at maximum size
-  zoomedInScale: 1.0,   // Base size when zoomed in (no scaling)
-  zoomedOutScale: 1.5,  // Cap at 150% of base size
+  maxZoom: 15,      // ~500m radius - scaling changes start here
+  minZoom: 10,      // At this zoom (far), markers are at minimum size
+  zoomedInScale: 2.0,   // 200% when zoomed in (larger markers when close)
+  zoomedOutScale: 0.75, // 50% of previous max (smaller when zoomed out)
 };
 
 // Clustering configuration
@@ -128,14 +128,12 @@ const createClusterElement = (
     if (photos.length >= CLUSTER_CONFIG.maxPhotosInCluster) break;
   }
 
-  const count = restaurants.length;
-
-  // Create stacked photos cluster - much more prominent
+  // Create stacked photos cluster - number of stacked cards shows cluster size
   container.innerHTML = `
     <div style="
       position: relative;
       width: 95px;
-      height: 115px;
+      height: 100px;
       filter: drop-shadow(0 6px 12px rgba(0,0,0,0.5));
     ">
       <!-- Stacked cards effect - back cards -->
@@ -196,24 +194,6 @@ const createClusterElement = (
           <div style="width:100%;height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:26px;">🍽️</div>
         `}
       </div>
-
-      <!-- Count badge - more prominent -->
-      <div style="
-        position: absolute;
-        top: -2px;
-        right: 0px;
-        background: linear-gradient(135deg, #ef4444, #dc2626);
-        color: white;
-        font-size: 14px;
-        font-weight: 800;
-        padding: 4px 10px;
-        border-radius: 12px;
-        border: 3px solid #fffef8;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-        z-index: 5;
-        min-width: 24px;
-        text-align: center;
-      ">${count}</div>
 
       <!-- Pointer/tail -->
       <div style="
