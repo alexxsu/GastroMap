@@ -77,8 +77,8 @@ const getCircleStyle = (isDarkMode: boolean, isSatellite: boolean) => {
 const ZOOM_SCALE_CONFIG = {
   maxZoom: 18,      // At this zoom (close), markers are at base size
   minZoom: 10,      // At this zoom (far), markers are at maximum size
-  zoomedInScale: 1.0,   // Base size when zoomed in close
-  zoomedOutScale: 1.6,  // Larger size when zoomed out to compensate
+  zoomedInScale: 1.2,   // Larger base size when zoomed in close
+  zoomedOutScale: 2.4,  // Cap at 200% of base size (1.2 * 2 = 2.4)
 };
 
 // Clustering configuration

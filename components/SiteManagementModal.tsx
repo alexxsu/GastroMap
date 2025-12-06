@@ -40,7 +40,7 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
     setTimeout(() => {
       setCurrentView(view);
       setIsViewTransitioning(false);
-    }, 150);
+    }, 250);
   };
 
   const goBack = () => {
@@ -54,7 +54,7 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
         setCurrentView('menu');
       }
       setIsViewTransitioning(false);
-    }, 150);
+    }, 250);
   };
 
   const navigateToUserDetail = (user: UserWithId) => {
@@ -64,7 +64,7 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
     setTimeout(() => {
       setCurrentView('userDetail');
       setIsViewTransitioning(false);
-    }, 150);
+    }, 250);
   };
 
   // Fetch all users
@@ -225,10 +225,10 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
           
           {/* Menu View */}
           {currentView === 'menu' && (
-            <div className={`p-4 space-y-2 transition-all duration-150 ${
-              isViewTransitioning 
-                ? transitionDirection === 'back' 
-                  ? 'opacity-0 translate-x-4' 
+            <div className={`p-4 space-y-2 transition-all duration-300 ease-out ${
+              isViewTransitioning
+                ? transitionDirection === 'back'
+                  ? 'opacity-0 translate-x-4'
                   : 'opacity-0 -translate-x-4'
                 : 'opacity-100 translate-x-0'
             }`}>
@@ -252,10 +252,10 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
 
           {/* User Management View */}
           {currentView === 'users' && (
-            <div className={`p-4 transition-all duration-150 ${
-              isViewTransitioning 
-                ? transitionDirection === 'forward' 
-                  ? 'opacity-0 translate-x-4' 
+            <div className={`p-4 transition-all duration-300 ease-out ${
+              isViewTransitioning
+                ? transitionDirection === 'forward'
+                  ? 'opacity-0 translate-x-4'
                   : 'opacity-0 -translate-x-4'
                 : 'opacity-100 translate-x-0'
             }`}>
@@ -399,7 +399,7 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
 
           {/* User Detail View */}
           {currentView === 'userDetail' && selectedUser && (
-            <div className={`p-4 transition-all duration-150 ${
+            <div className={`p-4 transition-all duration-300 ease-out ${
               isViewTransitioning
                 ? transitionDirection === 'forward'
                   ? 'opacity-0 translate-x-4'
