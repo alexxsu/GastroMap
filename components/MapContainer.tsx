@@ -72,21 +72,206 @@ const getCircleStyle = (isDarkMode: boolean, isSatellite: boolean) => {
   }
 };
 
-// Create HTML element for custom pin
-const createPinElement = (restaurant: Restaurant, onClick: () => void): HTMLDivElement => {
+// Zoom-based scaling configuration
+const ZOOM_SCALE_CONFIG = {
+  maxZoom: 18,      // At this zoom, markers are at full size
+  minZoom: 10,      // At this zoom, markers are at minimum size
+  maxScale: 1.0,    // Full size scale
+  minScale: 0.6,    // Minimum scale (larger than before)
+};
+
+// Clustering configuration
+const CLUSTER_CONFIG = {
+  gridSize: 80,          // Pixel grid size for clustering
+  minZoomForClustering: 15, // Start clustering below this zoom
+  maxPhotosInCluster: 4, // Max photos to show in cluster stack
+};
+
+const getScaleForZoom = (zoom: number): number => {
+  const { maxZoom, minZoom, maxScale, minScale } = ZOOM_SCALE_CONFIG;
+  if (zoom >= maxZoom) return maxScale;
+  if (zoom <= minZoom) return minScale;
+  const ratio = (zoom - minZoom) / (maxZoom - minZoom);
+  return minScale + ratio * (maxScale - minScale);
+};
+
+// Create cluster element with stacked photos
+const createClusterElement = (
+  restaurants: Restaurant[],
+  onClick: () => void,
+  scale: number = 1
+): HTMLDivElement => {
   const container = document.createElement('div');
   container.style.cssText = `
     position: absolute;
-    transform: translate(-50%, -100%);
+    transform: translate(-50%, -100%) scale(${scale});
+    transform-origin: bottom center;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.15s ease-out, z-index 0s;
+  `;
+  container.dataset.baseScale = String(scale);
+
+  // Collect photos from all restaurants
+  const photos: string[] = [];
+  for (const restaurant of restaurants) {
+    const visits = restaurant.visits || [];
+    for (const visit of visits) {
+      const photoUrl = visit.photoDataUrl || visit.photos?.[0];
+      if (photoUrl && photos.length < CLUSTER_CONFIG.maxPhotosInCluster) {
+        photos.push(photoUrl);
+      }
+    }
+    if (photos.length >= CLUSTER_CONFIG.maxPhotosInCluster) break;
+  }
+
+  const count = restaurants.length;
+
+  // Create stacked photos cluster
+  container.innerHTML = `
+    <div style="
+      position: relative;
+      width: 72px;
+      height: 88px;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+    ">
+      <!-- Stacked cards effect - back cards -->
+      ${photos.length >= 3 ? `
+        <div style="
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%) rotate(12deg);
+          width: 48px;
+          height: 48px;
+          background: #fffef8;
+          border: 2px solid #d4c5a9;
+          border-radius: 6px;
+          overflow: hidden;
+        ">
+          ${photos[2] ? `<img src="${photos[2]}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';" />` : ''}
+        </div>
+      ` : ''}
+
+      ${photos.length >= 2 ? `
+        <div style="
+          position: absolute;
+          top: 4px;
+          left: 50%;
+          transform: translateX(-50%) rotate(-6deg);
+          width: 48px;
+          height: 48px;
+          background: #fffef8;
+          border: 2px solid #d4c5a9;
+          border-radius: 6px;
+          overflow: hidden;
+        ">
+          ${photos[1] ? `<img src="${photos[1]}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';" />` : ''}
+        </div>
+      ` : ''}
+
+      <!-- Front card -->
+      <div style="
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%) rotate(2deg);
+        width: 52px;
+        height: 52px;
+        background: #fffef8;
+        border: 2px solid #d4c5a9;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      ">
+        ${photos[0] ? `
+          <img src="${photos[0]}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div style="display:none;width:100%;height:100%;background:#f3f4f6;align-items:center;justify-content:center;font-size:20px;position:absolute;top:0;left:0;">🍽️</div>
+        ` : `
+          <div style="width:100%;height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:20px;">🍽️</div>
+        `}
+      </div>
+
+      <!-- Count badge -->
+      <div style="
+        position: absolute;
+        top: 0;
+        right: 2px;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 10px;
+        border: 2px solid #fffef8;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        z-index: 5;
+      ">${count}</div>
+
+      <!-- Pointer/tail -->
+      <div style="
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+      ">
+        <div style="
+          width: 0;
+          height: 0;
+          border-left: 10px solid transparent;
+          border-right: 10px solid transparent;
+          border-top: 12px solid #d4c5a9;
+        "></div>
+        <div style="
+          width: 0;
+          height: 0;
+          border-left: 8px solid transparent;
+          border-right: 8px solid transparent;
+          border-top: 10px solid #fffef8;
+          margin-top: -12px;
+          margin-left: 2px;
+        "></div>
+      </div>
+    </div>
+  `;
+
+  // Hover effect
+  container.addEventListener('mouseenter', () => {
+    const baseScale = parseFloat(container.dataset.baseScale || '1');
+    container.style.transform = `translate(-50%, -100%) scale(${baseScale * 1.1})`;
+    container.style.zIndex = '1000';
+  });
+  container.addEventListener('mouseleave', () => {
+    const baseScale = parseFloat(container.dataset.baseScale || '1');
+    container.style.transform = `translate(-50%, -100%) scale(${baseScale})`;
+    container.style.zIndex = '10';
+  });
+
+  container.addEventListener('click', (e) => {
+    e.stopPropagation();
+    onClick();
+  });
+
+  return container;
+};
+
+// Create HTML element for custom pin
+const createPinElement = (restaurant: Restaurant, onClick: () => void, scale: number = 1): HTMLDivElement => {
+  const container = document.createElement('div');
+  container.style.cssText = `
+    position: absolute;
+    transform: translate(-50%, -100%) scale(${scale});
+    transform-origin: bottom center;
     cursor: pointer;
     z-index: 1;
-    transition: transform 0.2s ease, z-index 0s;
+    transition: transform 0.15s ease-out, z-index 0s;
   `;
-  
+  container.dataset.baseScale = String(scale);
+
   // Get data from restaurant
   const visits = restaurant.visits || [];
   const hasMultiplePosts = visits.length >= 2;
-  
+
   // Get photos from visits
   const firstVisit = visits[0];
   const secondVisit = visits[1];
@@ -272,13 +457,15 @@ const createPinElement = (restaurant: Restaurant, onClick: () => void): HTMLDivE
     `;
   }
   
-  // Hover effect
+  // Hover effect - use base scale
   container.addEventListener('mouseenter', () => {
-    container.style.transform = 'translate(-50%, -100%) scale(1.15)';
+    const baseScale = parseFloat(container.dataset.baseScale || '1');
+    container.style.transform = `translate(-50%, -100%) scale(${baseScale * 1.15})`;
     container.style.zIndex = '1000';
   });
   container.addEventListener('mouseleave', () => {
-    container.style.transform = 'translate(-50%, -100%)';
+    const baseScale = parseFloat(container.dataset.baseScale || '1');
+    container.style.transform = `translate(-50%, -100%) scale(${baseScale})`;
     container.style.zIndex = '1';
   });
   
@@ -292,22 +479,26 @@ const createPinElement = (restaurant: Restaurant, onClick: () => void): HTMLDivE
 
 // Custom Overlay class factory - must be called after Google Maps is loaded
 let CustomMarkerOverlayClass: any = null;
+let ClusterOverlayClass: any = null;
 
-const getCustomMarkerOverlayClass = () => {
-  if (CustomMarkerOverlayClass) return CustomMarkerOverlayClass;
-  
-  CustomMarkerOverlayClass = class extends google.maps.OverlayView {
+// Cluster overlay factory
+const getClusterOverlayClass = () => {
+  if (ClusterOverlayClass) return ClusterOverlayClass;
+
+  ClusterOverlayClass = class extends google.maps.OverlayView {
     private position: google.maps.LatLng;
     private container: HTMLDivElement;
-    private restaurant: Restaurant;
+    private restaurants: Restaurant[];
     private onClick: () => void;
+    private currentScale: number;
 
-    constructor(position: google.maps.LatLng, restaurant: Restaurant, onClick: () => void) {
+    constructor(position: google.maps.LatLng, restaurants: Restaurant[], onClick: () => void, scale: number = 1) {
       super();
       this.position = position;
-      this.restaurant = restaurant;
+      this.restaurants = restaurants;
       this.onClick = onClick;
-      this.container = createPinElement(restaurant, onClick);
+      this.currentScale = scale;
+      this.container = createClusterElement(restaurants, onClick, scale);
     }
 
     onAdd() {
@@ -318,7 +509,66 @@ const getCustomMarkerOverlayClass = () => {
     draw() {
       const projection = this.getProjection();
       if (!projection) return;
-      
+
+      const point = projection.fromLatLngToDivPixel(this.position);
+      if (point) {
+        this.container.style.left = point.x + 'px';
+        this.container.style.top = point.y + 'px';
+      }
+    }
+
+    onRemove() {
+      if (this.container.parentElement) {
+        this.container.parentElement.removeChild(this.container);
+      }
+    }
+
+    getPosition() {
+      return this.position;
+    }
+
+    updateScale(scale: number) {
+      this.currentScale = scale;
+      this.container.dataset.baseScale = String(scale);
+      this.container.style.transform = `translate(-50%, -100%) scale(${scale})`;
+    }
+
+    getRestaurants() {
+      return this.restaurants;
+    }
+  };
+
+  return ClusterOverlayClass;
+};
+
+const getCustomMarkerOverlayClass = () => {
+  if (CustomMarkerOverlayClass) return CustomMarkerOverlayClass;
+
+  CustomMarkerOverlayClass = class extends google.maps.OverlayView {
+    private position: google.maps.LatLng;
+    private container: HTMLDivElement;
+    private restaurant: Restaurant;
+    private onClick: () => void;
+    private currentScale: number;
+
+    constructor(position: google.maps.LatLng, restaurant: Restaurant, onClick: () => void, scale: number = 1) {
+      super();
+      this.position = position;
+      this.restaurant = restaurant;
+      this.onClick = onClick;
+      this.currentScale = scale;
+      this.container = createPinElement(restaurant, onClick, scale);
+    }
+
+    onAdd() {
+      const panes = this.getPanes();
+      panes?.overlayMouseTarget.appendChild(this.container);
+    }
+
+    draw() {
+      const projection = this.getProjection();
+      if (!projection) return;
+
       const point = projection.fromLatLngToDivPixel(this.position);
       if (point) {
         this.container.style.left = point.x + 'px';
@@ -339,14 +589,24 @@ const getCustomMarkerOverlayClass = () => {
     getContainer() {
       return this.container;
     }
-    
+
     updateContent(restaurant: Restaurant) {
       this.restaurant = restaurant;
-      const newContainer = createPinElement(restaurant, this.onClick);
+      const newContainer = createPinElement(restaurant, this.onClick, this.currentScale);
       this.container.innerHTML = newContainer.innerHTML;
     }
+
+    updateScale(scale: number) {
+      this.currentScale = scale;
+      this.container.dataset.baseScale = String(scale);
+      this.container.style.transform = `translate(-50%, -100%) scale(${scale})`;
+    }
+
+    getRestaurant() {
+      return this.restaurant;
+    }
   };
-  
+
   return CustomMarkerOverlayClass;
 };
 
@@ -365,9 +625,133 @@ const MapContainer: React.FC<MapContainerProps> = ({
 
   const overlaysRef = useRef<Map<string, any>>(new Map());
   const circlesRef = useRef<Map<string, google.maps.Circle>>(new Map());
+  const clustersRef = useRef<any[]>([]);
+  const hiddenOverlaysRef = useRef<Set<string>>(new Set());
   const currentMapTypeRef = useRef<string>(mapType);
   const onMapClickRef = useRef(onMapClick);
   const restaurantsMapRef = useRef<Map<string, Restaurant>>(new Map());
+  const zoomListenerRef = useRef<google.maps.MapsEventListener | null>(null);
+  const currentScaleRef = useRef<number>(1);
+
+  // Clustering helper function
+  const computeClusters = (
+    map: google.maps.Map,
+    restaurants: Restaurant[],
+    zoom: number
+  ): { clusters: Restaurant[][]; singles: Restaurant[] } => {
+    if (zoom >= CLUSTER_CONFIG.minZoomForClustering) {
+      return { clusters: [], singles: restaurants };
+    }
+
+    const projection = map.getProjection();
+    if (!projection) return { clusters: [], singles: restaurants };
+
+    // Convert to pixel coordinates
+    const points: { restaurant: Restaurant; pixel: google.maps.Point }[] = [];
+    for (const r of restaurants) {
+      if (r.location) {
+        const latLng = new google.maps.LatLng(r.location.lat, r.location.lng);
+        const worldPoint = projection.fromLatLngToPoint(latLng);
+        if (worldPoint) {
+          const scale = Math.pow(2, zoom);
+          points.push({
+            restaurant: r,
+            pixel: new google.maps.Point(worldPoint.x * scale, worldPoint.y * scale)
+          });
+        }
+      }
+    }
+
+    // Grid-based clustering
+    const gridSize = CLUSTER_CONFIG.gridSize;
+    const grid: Map<string, Restaurant[]> = new Map();
+
+    for (const point of points) {
+      const cellX = Math.floor(point.pixel.x / gridSize);
+      const cellY = Math.floor(point.pixel.y / gridSize);
+      const key = `${cellX},${cellY}`;
+
+      if (!grid.has(key)) {
+        grid.set(key, []);
+      }
+      grid.get(key)!.push(point.restaurant);
+    }
+
+    const clusters: Restaurant[][] = [];
+    const singles: Restaurant[] = [];
+
+    for (const [, group] of grid) {
+      if (group.length >= 2) {
+        clusters.push(group);
+      } else {
+        singles.push(...group);
+      }
+    }
+
+    return { clusters, singles };
+  };
+
+  // Update clusters and marker visibility
+  const updateClustering = (map: google.maps.Map, scale: number) => {
+    const zoom = map.getZoom() || 13;
+    const restaurants = Array.from(restaurantsMapRef.current.values());
+    const { clusters, singles } = computeClusters(map, restaurants, zoom);
+
+    // Clear old clusters
+    for (const cluster of clustersRef.current) {
+      cluster.setMap(null);
+    }
+    clustersRef.current = [];
+
+    // Track which restaurants are in clusters
+    const clusteredIds = new Set<string>();
+    for (const cluster of clusters) {
+      for (const r of cluster) {
+        clusteredIds.add(r.id);
+      }
+    }
+
+    // Hide/show individual overlays
+    for (const [id, overlay] of overlaysRef.current) {
+      const container = overlay.getContainer();
+      if (clusteredIds.has(id)) {
+        container.style.display = 'none';
+        hiddenOverlaysRef.current.add(id);
+      } else {
+        container.style.display = '';
+        hiddenOverlaysRef.current.delete(id);
+      }
+    }
+
+    // Create cluster overlays
+    const ClusterClass = getClusterOverlayClass();
+    for (const cluster of clusters) {
+      // Calculate center of cluster
+      let sumLat = 0, sumLng = 0;
+      for (const r of cluster) {
+        sumLat += r.location.lat;
+        sumLng += r.location.lng;
+      }
+      const centerLat = sumLat / cluster.length;
+      const centerLng = sumLng / cluster.length;
+
+      const clusterOverlay = new ClusterClass(
+        new google.maps.LatLng(centerLat, centerLng),
+        cluster,
+        () => {
+          // Zoom in to cluster on click
+          const bounds = new google.maps.LatLngBounds();
+          for (const r of cluster) {
+            bounds.extend(new google.maps.LatLng(r.location.lat, r.location.lng));
+          }
+          map.fitBounds(bounds, 60);
+        },
+        scale
+      );
+      clusterOverlay.setMap(map);
+      clustersRef.current.push(clusterOverlay);
+    }
+  };
 
   useEffect(() => {
     onMapClickRef.current = onMapClick;
@@ -442,10 +826,33 @@ const MapContainer: React.FC<MapContainerProps> = ({
         }
       });
 
+      // Zoom listener for marker scaling and clustering
+      zoomListenerRef.current = map.addListener('zoom_changed', () => {
+        const zoom = map.getZoom() || 13;
+        const newScale = getScaleForZoom(zoom);
+        currentScaleRef.current = newScale;
+
+        // Update all overlay scales
+        for (const [, overlay] of overlaysRef.current) {
+          overlay.updateScale(newScale);
+        }
+
+        // Update cluster scales
+        for (const cluster of clustersRef.current) {
+          cluster.updateScale(newScale);
+        }
+
+        // Update clustering
+        updateClustering(map, newScale);
+      });
+
+      // Set initial scale
+      currentScaleRef.current = getScaleForZoom(13);
+
       setMapInstance(map);
       setIsMapReady(true);
       onMapLoad(map);
-      
+
       console.log('Map initialized successfully');
     } catch (e) {
       console.error("Map initialization error:", e);
@@ -490,16 +897,22 @@ const MapContainer: React.FC<MapContainerProps> = ({
       }
     }
 
+    // Get current zoom scale
+    const currentZoom = mapInstance.getZoom() || 13;
+    const scale = getScaleForZoom(currentZoom);
+    currentScaleRef.current = scale;
+
     // Add or update overlays
     for (const restaurant of validRestaurants) {
       if (!overlaysRef.current.has(restaurant.id)) {
         const position = new google.maps.LatLng(restaurant.location.lat, restaurant.location.lng);
-        
+
         const OverlayClass = getCustomMarkerOverlayClass();
         const overlay = new OverlayClass(
           position,
           restaurant,
-          () => onMarkerClick(restaurant)
+          () => onMarkerClick(restaurant),
+          scale
         );
         overlay.setMap(mapInstance);
         overlaysRef.current.set(restaurant.id, overlay);
@@ -526,6 +939,9 @@ const MapContainer: React.FC<MapContainerProps> = ({
     }
 
     console.log(`Active overlays: ${overlaysRef.current.size}`);
+
+    // Update clustering after markers are created
+    updateClustering(mapInstance, scale);
 
   }, [mapInstance, restaurants, onMarkerClick, mapType, isMapReady]);
 

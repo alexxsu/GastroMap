@@ -203,7 +203,9 @@ export const SiteManagementModal: React.FC<SiteManagementModalProps> = ({
               </button>
             )}
             <div className="flex items-center gap-2">
-              <Shield size={20} className="text-purple-400" />
+              {(currentView !== 'userDetail' || selectedUser?.role === 'admin') && (
+                <Shield size={20} className="text-purple-400" />
+              )}
               <h2 className="text-lg font-semibold text-white">
                 {currentView === 'menu' && t('siteManagement')}
                 {currentView === 'users' && t('userManagement')}
